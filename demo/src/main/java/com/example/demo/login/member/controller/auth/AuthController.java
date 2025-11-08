@@ -1,0 +1,50 @@
+package com.example.demo.login.member.controller.auth;
+
+import com.example.demo.common.exception.ApiResponse;
+import com.example.demo.login.member.controller.auth.dto.LoginRequest;
+import com.example.demo.login.member.controller.auth.dto.LoginResponse;
+import com.example.demo.login.member.domain.member.Member;
+import com.example.demo.login.member.mapper.auth.AuthMapper;
+import com.example.demo.login.member.service.auth.AuthService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+@RestController
+@RequestMapping
+@RequiredArgsConstructor
+@Slf4j
+public class AuthController {
+
+    private final AuthService authService;
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        Member member = authService.loginAndReturnMember(loginRequest);
+        String token = authService.generateToken(member.getId());
+
+        Cookie jwtCookie = new Cookie("token", token);
+        jwtCookie.setHttpOnly(true);
+        jwtCookie.setPath("/");
+        jwtCookie.setMaxAge(60 * 60);
+        jwtCookie.setSecure(false);
+        response.addCookie(jwtCookie);
+
+        LoginResponse loginResponse = AuthMapper.toLoginResponse(member);
+        return ResponseEntity.ok(ApiResponse.success(loginResponse));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletResponse response) {
+        Cookie deleteCookie = new Cookie("token", null);
+        deleteCookie.setHttpOnly(true);
+        deleteCookie.setPath("/");
+        deleteCookie.setMaxAge(0);
+        deleteCookie.setSecure(false);
+        response.addCookie(deleteCookie);
+
+        return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
+    }
+}
