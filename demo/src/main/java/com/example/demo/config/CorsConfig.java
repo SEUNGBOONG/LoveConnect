@@ -15,9 +15,9 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-                "https://daemyungdesk.com",
-                "https://www.daemyungdesk.com", "https://osh.daemyungdesk.com",
-                "http://localhost:3000"
+                "https://lovereconnect.co.kr",
+                "https://www.lovereconnect.co.kr",   // www 도 추가하는 게 안전해
+                "http://localhost:3000"              // 로컬 개발용은 남겨둬도 됨
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of(
