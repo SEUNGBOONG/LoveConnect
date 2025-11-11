@@ -11,6 +11,8 @@ import com.example.demo.match.domain.MatchMessage;
 import com.example.demo.match.strategy.MatchScoreStrategy;
 import com.example.demo.match.domain.MatchStatus;
 import com.example.demo.match.event.MatchCompletedEvent;
+import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
+import com.example.demo.login.global.exception.exceptions.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,7 @@ public class MatchRequestService {
         Member requester = getMember(memberId);
 
         if (matchRequestRepository.existsByRequester(requester)) {
-            throw new IllegalArgumentException("이미 한 명에게 요청을 보냈습니다.");
+            throw new CustomException(CustomErrorCode.MATCH_ALREADY_REQUESTED);
         }
 
         String encryptedPhone = AESUtil.encrypt(command.getTargetPhone().trim());
@@ -47,9 +49,10 @@ public class MatchRequestService {
 
         matchRequestRepository.save(newRequest);
 
+        // 상대방의 매칭 요청이 이미 존재하는지 확인
         matchRequestRepository.findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalse(
-                        requester.getPhoneNumber(), requester.getInstagramId())
-                .ifPresent(oppositeRequest -> handleMatching(newRequest, oppositeRequest));
+                requester.getPhoneNumber(), requester.getInstagramId()
+        ).ifPresent(oppositeRequest -> handleMatching(newRequest, oppositeRequest));
     }
 
     private void handleMatching(MatchRequest requesterRequest, MatchRequest targetRequest) {
@@ -69,7 +72,7 @@ public class MatchRequestService {
     public MatchResponseDto getMatchRequest(Long memberId) {
         Member requester = getMember(memberId);
         MatchRequest request = matchRequestRepository.findByRequester(requester)
-                .orElseThrow(() -> new IllegalArgumentException("매칭 요청이 없습니다."));
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
         return MatchResponseDto.builder()
                 .targetPhone(AESUtil.decrypt(request.getTargetPhoneNumber()))
@@ -85,10 +88,10 @@ public class MatchRequestService {
     public void updateMatchRequest(Long memberId, MatchRequestCommand command) {
         Member requester = getMember(memberId);
         MatchRequest request = matchRequestRepository.findByRequester(requester)
-                .orElseThrow(() -> new IllegalArgumentException("수정할 매칭 요청이 없습니다."));
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
         if (request.isMatched()) {
-            throw new IllegalStateException("이미 매칭된 요청은 수정할 수 없습니다.");
+            throw new CustomException(CustomErrorCode.MATCH_ALREADY_COMPLETED);
         }
 
         String encryptedPhone = AESUtil.encrypt(command.getTargetPhone().trim());
@@ -106,10 +109,10 @@ public class MatchRequestService {
     public void deleteMatchRequest(Long memberId) {
         Member requester = getMember(memberId);
         MatchRequest request = matchRequestRepository.findByRequester(requester)
-                .orElseThrow(() -> new IllegalArgumentException("삭제할 매칭 요청이 없습니다."));
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
         if (request.isMatched()) {
-            throw new IllegalStateException("이미 매칭된 요청은 삭제할 수 없습니다.");
+            throw new CustomException(CustomErrorCode.MATCH_ALREADY_COMPLETED);
         }
 
         matchRequestRepository.delete(request);
@@ -119,10 +122,10 @@ public class MatchRequestService {
     public String checkMatchResult(Long memberId) {
         Member requester = getMember(memberId);
         MatchRequest request = matchRequestRepository.findByRequester(requester)
-                .orElseThrow(() -> new IllegalArgumentException("매칭 요청이 없습니다."));
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
         if (!request.isMatched()) {
-            return "아직 상대방이 요청하지 않았습니다.";
+            throw new CustomException(CustomErrorCode.MATCH_RESULT_PENDING);
         }
 
         return "🎊 매칭 결과: " + request.getMatchMessage().getMessage();
@@ -130,6 +133,6 @@ public class MatchRequestService {
 
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
     }
 }

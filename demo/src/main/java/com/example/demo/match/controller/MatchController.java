@@ -21,7 +21,7 @@ public class MatchController {
             @Member Long memberId
     ) {
         matchService.createMatchRequest(memberId, command);
-        return ResponseEntity.ok(ApiResponse.success("매칭 요청 완료"));
+        return ResponseEntity.ok(ApiResponse.success("매칭 요청 완료 ✅"));
     }
 
     @PutMapping("/request")
@@ -30,13 +30,13 @@ public class MatchController {
             @Member Long memberId
     ) {
         matchService.updateMatchRequest(memberId, command);
-        return ResponseEntity.ok(ApiResponse.success("매칭 요청 수정 완료"));
+        return ResponseEntity.ok(ApiResponse.success("매칭 요청 수정 완료 ✏️"));
     }
 
     @DeleteMapping("/request")
     public ResponseEntity<ApiResponse<String>> deleteMatchRequest(@Member Long memberId) {
         matchService.deleteMatchRequest(memberId);
-        return ResponseEntity.ok(ApiResponse.success("매칭 요청 삭제 완료"));
+        return ResponseEntity.ok(ApiResponse.success("매칭 요청 삭제 완료 🗑️"));
     }
 
     @GetMapping("/request")
