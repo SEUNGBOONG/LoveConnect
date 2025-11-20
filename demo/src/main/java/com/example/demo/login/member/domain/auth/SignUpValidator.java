@@ -2,7 +2,6 @@ package com.example.demo.login.member.domain.auth;
 
 import com.example.demo.login.member.controller.auth.dto.LoginRequest;
 import com.example.demo.login.member.controller.auth.dto.NormalSignUpRequest;
-import com.example.demo.login.member.controller.auth.dto.SignUpRequest;
 import com.example.demo.login.member.exception.exceptions.auth.InvalidLoginRequestException;
 import com.example.demo.login.member.exception.exceptions.auth.InvalidPasswordFormatException;
 import com.example.demo.login.member.exception.exceptions.auth.InvalidSignUpRequestException;
