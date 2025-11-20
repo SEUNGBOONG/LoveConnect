@@ -26,10 +26,10 @@ public class AuthController {
         String token = authService.generateToken(member.getId());
 
         Cookie jwtCookie = new Cookie("token", token);
-        jwtCookie.setHttpOnly(true);
+//        jwtCookie.setHttpOnly(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(60 * 60);
-        jwtCookie.setSecure(false);
+        jwtCookie.setSecure(true);
         response.addCookie(jwtCookie);
 
         LoginResponse loginResponse = AuthMapper.toLoginResponse(member);
@@ -39,10 +39,10 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(HttpServletResponse response) {
         Cookie deleteCookie = new Cookie("token", null);
-        deleteCookie.setHttpOnly(true);
+//        deleteCookie.setHttpOnly(true);
         deleteCookie.setPath("/");
         deleteCookie.setMaxAge(0);
-        deleteCookie.setSecure(false);
+        deleteCookie.setSecure(true);
         response.addCookie(deleteCookie);
 
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));

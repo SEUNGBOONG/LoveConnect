@@ -1,17 +1,7 @@
 package com.example.demo.login.member.domain.member;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Entity(name = "member")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -46,7 +36,19 @@ public class Member {
     private String mbti;
 
     @Column(nullable = false)
-    private String birthDate;
+    private String birthDate; // e.g., "980826"
+
+    @Column(nullable = false)
+    private String gender; // "MALE", "FEMALE" 등 ENUM 가능
+
+    @Column(nullable = false)
+    private boolean emailAgree;
+
+    @Column(nullable = false)
+    private boolean privacyAgree;
+
+    @Column(nullable = false)
+    private boolean useAgree;
 
     public void updatePassword(String newPassword) {
         this.memberPassword = newPassword;

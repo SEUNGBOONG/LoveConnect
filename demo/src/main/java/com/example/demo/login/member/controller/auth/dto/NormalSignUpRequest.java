@@ -8,5 +8,11 @@ public record NormalSignUpRequest(
         String phoneNumber,
         String instagramId,
         String mbti,
-        String birthDate
+        String birthYear,
+        String birthMonth,
+        String birthDay,
+        String gender,
+        boolean emailAgree,
+        boolean privacyAgree,
+        boolean useAgree
 ) {}
