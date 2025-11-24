@@ -19,7 +19,6 @@ public class AuthMapper {
                 .memberNickName(request.nickname())
                 .phoneNumber(request.phoneNumber())
                 .instagramId(request.instagramId())
-
                 .mbti(request.mbti())
                 .birthDate(birthDate)
                 .gender(request.gender())
