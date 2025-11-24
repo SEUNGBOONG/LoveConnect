@@ -36,5 +36,4 @@ public class AuthStateController {
         emailSenderUtil.clearVerifiedFlag(request.getEmail());
         return ResponseEntity.ok(Setting.PASSWORD_CHANGE_SUCCESS.toString());
     }
-
 }

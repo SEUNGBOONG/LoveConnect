@@ -1,7 +1,11 @@
 package com.example.demo.login.member.domain.member;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity(name = "member")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

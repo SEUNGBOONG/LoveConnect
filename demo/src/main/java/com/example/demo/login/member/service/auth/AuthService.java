@@ -57,10 +57,6 @@ public class AuthService {
         return savedMember;
     }
 
-    public boolean checkEmailDuplicate(String email) {
-        return memberJpaRepository.existsByMemberEmail(email);
-    }
-
     @Transactional(readOnly = true)
     public Member loginAndReturnMember(LoginRequest loginRequest) {
         signUpValidator.validateLoginRequestFormat(loginRequest);

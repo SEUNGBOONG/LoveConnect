@@ -5,7 +5,6 @@ import com.example.demo.login.member.controller.auth.dto.NormalSignUpRequest;
 import com.example.demo.login.member.controller.auth.dto.SignUpResponse;
 import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.member.service.auth.AuthService;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

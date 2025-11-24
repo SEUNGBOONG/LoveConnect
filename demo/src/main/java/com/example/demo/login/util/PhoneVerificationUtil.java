@@ -40,7 +40,4 @@ public class PhoneVerificationUtil {
         redisUtil.delete(PREFIX + phoneNumber);
     }
 
-    public boolean isExpired(String phoneNumber) {
-        return !redisUtil.hasKey(PREFIX + phoneNumber);
-    }
 }
