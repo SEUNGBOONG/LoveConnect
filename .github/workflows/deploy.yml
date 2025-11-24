@@ -26,8 +26,9 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -i ~/.ssh/id_rsa ubuntu@3.38.253.152 << 'EOF'
-            cd ~/demo/demo  # Dockerfile 있는 경로
-            git pull origin main
+            cd ~/demo/demo
+            git fetch origin main
+            git reset --hard origin/main
             docker-compose down
             docker-compose build --no-cache
             docker-compose up -d --force-recreate
