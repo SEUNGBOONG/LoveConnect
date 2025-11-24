@@ -14,5 +14,6 @@ public record NormalSignUpRequest(
         String gender,
         boolean emailAgree,
         boolean privacyAgree,
+
         boolean useAgree
 ) {}
