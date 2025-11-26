@@ -1,5 +1,6 @@
 package com.example.demo.login.member.mapper.auth;
 
+import com.example.demo.common.util.AESUtil;
 import com.example.demo.login.member.controller.auth.dto.LoginResponse;
 import com.example.demo.login.member.controller.auth.dto.NormalSignUpRequest;
 import com.example.demo.login.member.controller.auth.dto.SignUpResponse;
@@ -17,7 +18,7 @@ public class AuthMapper {
                 .memberName(request.name())
                 .memberPassword(encodedPassword)
                 .memberNickName(request.nickname())
-                .phoneNumber(request.phoneNumber())
+                .phoneNumber(AESUtil.encrypt(request.phoneNumber()))
                 .instagramId(request.instagramId())
                 .mbti(request.mbti())
                 .birthDate(birthDate)
