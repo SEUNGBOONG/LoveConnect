@@ -10,7 +10,7 @@ services:
       - loveconnect-net
 
   app:
-    image: leeseungyeop/loveconnect:latest  # ⬅️ 빌드 대신 이미지로 교체
+    image: leeseungyeop/loveconnect:latest  # 이미지 직접 사용
     container_name: loveconnect-app
     ports:
       - "8080:8080"
