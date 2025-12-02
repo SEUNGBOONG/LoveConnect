@@ -21,7 +21,10 @@ public enum CustomErrorCode {
     MATCH_ALREADY_COMPLETED(HttpStatus.CONFLICT, "MATCH_003", "이미 매칭된 요청은 수정/삭제할 수 없습니다."),
     MATCH_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "MATCH_004", "상대방 매칭 요청이 없습니다."),
     MATCH_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "MATCH_005", "회원을 찾을 수 없습니다."),
-    MATCH_RESULT_PENDING(HttpStatus.OK, "MATCH_006", "아직 상대방이 요청하지 않았습니다.");
+    MATCH_RESULT_PENDING(HttpStatus.OK, "MATCH_006", "아직 상대방이 요청하지 않았습니다."),
+    DUPLICATE_MATCH_REQUEST(HttpStatus.BAD_REQUEST,"MATCH_007","중복 요청입니다." );
+
+
 
     private final HttpStatus httpStatus;
     private final String customCode;

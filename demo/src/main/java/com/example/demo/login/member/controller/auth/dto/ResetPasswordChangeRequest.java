@@ -1,0 +1,11 @@
+package com.example.demo.login.member.controller.auth.dto;
+
+import lombok.Getter;
+
+@Getter
+public class ResetPasswordChangeRequest {
+    private String email;
+    private String phoneNumber;
+    private String newPassword;
+    private String confirmPassword;
+}

@@ -13,6 +13,7 @@ import static jakarta.persistence.FetchType.LAZY;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
 public class MatchRequest {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

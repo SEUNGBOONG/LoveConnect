@@ -19,7 +19,7 @@ public class AuthMapper {
                 .memberPassword(encodedPassword)
                 .memberNickName(request.nickname())
                 .phoneNumber(AESUtil.encrypt(request.phoneNumber()))
-                .instagramId(request.instagramId())
+                .instagramId(AESUtil.encrypt(request.instagramId()))
                 .mbti(request.mbti())
                 .birthDate(birthDate)
                 .gender(request.gender())

@@ -3,23 +3,24 @@ package com.example.demo.match.application;
 import com.example.demo.common.util.AESUtil;
 import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
-import com.example.demo.match.domain.MatchRequest;
-import com.example.demo.match.domain.MatchRequestRepository;
+import com.example.demo.match.domain.*;
 import com.example.demo.match.dto.MatchRequestCommand;
 import com.example.demo.match.dto.MatchResponseDto;
-import com.example.demo.match.domain.MatchMessage;
-import com.example.demo.match.strategy.MatchScoreStrategy;
-import com.example.demo.match.domain.MatchStatus;
 import com.example.demo.match.event.MatchCompletedEvent;
+import com.example.demo.match.strategy.MatchScoreStrategy;
 import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
 import com.example.demo.login.global.exception.exceptions.CustomException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MatchRequestService {
 
     private final MatchRequestRepository matchRequestRepository;
@@ -28,44 +29,75 @@ public class MatchRequestService {
 
     @Transactional
     public void createMatchRequest(Long memberId, MatchRequestCommand command) {
-        Member requester = getMember(memberId);
+        Member me = getMember(memberId);
 
-        if (matchRequestRepository.existsByRequester(requester)) {
-            throw new CustomException(CustomErrorCode.MATCH_ALREADY_REQUESTED);
+        // 사용자가 입력한 평문 값 (상대방 정보)
+        String inputPhone = command.getTargetPhone().trim();
+        String inputInsta = command.getTargetInsta().trim().toLowerCase();
+
+        // 암호화 후 저장할 값
+        String encTargetPhone = AESUtil.encrypt(inputPhone);
+        String encTargetInsta = AESUtil.encrypt(inputInsta);
+
+        // ✅ 내 정보 (이미 암호화된 상태임 — 회원 가입 시 암호화 저장)
+        String myEncPhone = me.getPhoneNumber();
+        String myEncInsta = me.getInstagramId();
+
+        // 🧾 중복 요청 방지
+        if (matchRequestRepository.existsByRequester(me)) {
+            throw new CustomException(CustomErrorCode.DUPLICATE_MATCH_REQUEST);
         }
 
-        String encryptedPhone = AESUtil.encrypt(command.getTargetPhone().trim());
-        String encryptedInsta = AESUtil.encrypt(command.getTargetInsta().trim());
-
-        MatchRequest newRequest = MatchRequest.builder()
-                .requester(requester)
-                .targetPhoneNumber(encryptedPhone)
-                .targetInstagramId(encryptedInsta)
+        // ✅ 내 요청 먼저 저장
+        MatchRequest myRequest = MatchRequest.builder()
+                .requester(me)
                 .targetName(command.getTargetName())
+                .targetInstagramId(encTargetInsta)
+                .targetPhoneNumber(encTargetPhone)
                 .requesterDesire(command.getRequesterDesire())
                 .status(MatchStatus.PENDING)
                 .matched(false)
                 .build();
 
-        matchRequestRepository.save(newRequest);
+        matchRequestRepository.save(myRequest);
+        log.info("📩 [내 요청 저장 완료] → {}", me.getMemberName());
 
-        // 상대방의 매칭 요청이 이미 존재하는지 확인
-        matchRequestRepository.findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalse(
-                requester.getPhoneNumber(), requester.getInstagramId()
-        ).ifPresent(oppositeRequest -> handleMatching(newRequest, oppositeRequest));
-    }
+        // ✅ 역방향 요청이 있는지 확인 (상대가 나를 향해 보낸 요청)
+        Optional<MatchRequest> reverseOpt =
+                matchRequestRepository.findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalseAndStatus(
+                        myEncPhone, myEncInsta, MatchStatus.PENDING);
 
-    private void handleMatching(MatchRequest requesterRequest, MatchRequest targetRequest) {
-        int requesterDesire = requesterRequest.getRequesterDesire();
-        int targetDesire = targetRequest.getRequesterDesire();
+        if (reverseOpt.isPresent()) {
+            MatchRequest reverseReq = reverseOpt.get();
+            Member opponent = reverseReq.getRequester();
 
-        MatchMessage matchMessage = MatchScoreStrategy.calculate(requesterDesire, targetDesire);
+            int myDesire = myRequest.getRequesterDesire();
+            int yourDesire = reverseReq.getRequesterDesire();
 
-        MatchCompletedEvent event = requesterRequest.matchWith(targetRequest, matchMessage);
-        matchRequestRepository.save(requesterRequest);
-        matchRequestRepository.save(targetRequest);
+            MatchMessage message = MatchScoreStrategy.calculate(myDesire, yourDesire);
 
-        eventPublisher.publishEvent(event);
+            // 💾 상대 요청 업데이트
+            reverseReq.setMatched(true);
+            reverseReq.setMatchedMember(me);
+            reverseReq.setMatchMessage(message);
+            reverseReq.setTargetDesire(myDesire);
+            reverseReq.setStatus(MatchStatus.MATCHED);
+
+            // 💾 내 요청도 업데이트
+            myRequest.setMatched(true);
+            myRequest.setMatchedMember(opponent);
+            myRequest.setMatchMessage(message);
+            myRequest.setTargetDesire(yourDesire);
+            myRequest.setStatus(MatchStatus.MATCHED);
+
+            matchRequestRepository.save(reverseReq);
+            matchRequestRepository.save(myRequest);
+
+            log.info("🎯 [쌍방 매칭 성공] {} ❤️ {}", me.getMemberName(), opponent.getMemberName());
+            eventPublisher.publishEvent(new MatchCompletedEvent(me, opponent, message));
+        } else {
+            log.info("⌛ [상대 요청 없음] → 대기 상태 유지");
+        }
     }
 
     @Transactional(readOnly = true)
@@ -94,12 +126,12 @@ public class MatchRequestService {
             throw new CustomException(CustomErrorCode.MATCH_ALREADY_COMPLETED);
         }
 
-        String encryptedPhone = AESUtil.encrypt(command.getTargetPhone().trim());
-        String encryptedInsta = AESUtil.encrypt(command.getTargetInsta().trim());
+        String phone = command.getTargetPhone().trim();
+        String insta = command.getTargetInsta().trim().toLowerCase();
 
         request.updateTargetInfo(
-                encryptedPhone,
-                encryptedInsta,
+                AESUtil.encrypt(phone),
+                AESUtil.encrypt(insta),
                 command.getTargetName(),
                 command.getRequesterDesire()
         );

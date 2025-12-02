@@ -1,5 +1,6 @@
 package com.example.demo.login.member.service.auth;
 
+import com.example.demo.common.util.AESUtil;
 import com.example.demo.login.util.AligoSmsUtil;
 import com.example.demo.login.util.PhoneVerificationUtil;
 import com.example.demo.login.util.RedisUtil;
@@ -27,19 +28,29 @@ public class PhoneAuthService {
     }
 
     public boolean verifyCode(String phoneNumber, String inputCode) {
+
         boolean result = phoneVerificationUtil.verifyCode(phoneNumber, inputCode);
+
         if (result) {
             phoneVerificationUtil.removeCode(phoneNumber);
-            redisUtil.set(VERIFIED_PREFIX + phoneNumber, "true", Duration.ofMinutes(10));
+
+            // 🔥 인증 성공 → 암호화된 전화번호로 Redis에 저장
+            String encryptedPhone = AESUtil.encrypt(phoneNumber);
+            redisUtil.set(VERIFIED_PREFIX + encryptedPhone, "true", Duration.ofMinutes(10));
         }
+
         return result;
     }
 
     public boolean isVerified(String phoneNumber) {
-        return "true".equals(redisUtil.get(VERIFIED_PREFIX + phoneNumber));
+        // 🔥 조회도 암호화된 값으로
+        String encryptedPhone = AESUtil.encrypt(phoneNumber);
+        return "true".equals(redisUtil.get(VERIFIED_PREFIX + encryptedPhone));
     }
 
     public void clearVerified(String phoneNumber) {
-        redisUtil.delete(VERIFIED_PREFIX + phoneNumber);
+        // 🔥 삭제도 암호화된 값으로
+        String encryptedPhone = AESUtil.encrypt(phoneNumber);
+        redisUtil.delete(VERIFIED_PREFIX + encryptedPhone);
     }
 }
