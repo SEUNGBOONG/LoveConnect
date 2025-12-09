@@ -29,17 +29,24 @@ public class AuthService {
     private final PhoneAuthService phoneAuthService;
 
     public Member normalSignUp(NormalSignUpRequest request) {
+
+        // 🔥 1) 전화번호 인증 여부 체크
+        if (!phoneAuthService.isVerified(request.phoneNumber())) {
+            throw new CustomException(CustomErrorCode.PHONE_AUTH_REQUIRED);
+        }
+
+        // 🔍 2) 나머지 검증
         emailValidator.validateEmailFormat(request.email());
         signUpValidator.normalValidateSignupRequestFormat(request);
 
-        // ⭐ 닉네임 중복 검사
         authValidator.checkDuplicateMemberNickName(request.nickname());
-
-        // ⭐ 이메일 중복 검사
         authValidator.checkDuplicateMemberEmail(request.email());
 
         String encodedPassword = passwordEncoder.encode(request.password());
         Member member = AuthMapper.toNormalMember(request, encodedPassword);
+
+        // 🔥 3) 회원가입 완료 후 인증상태 제거 (선택적)
+        phoneAuthService.clearVerified(request.phoneNumber());
 
         return memberJpaRepository.save(member);
     }
