@@ -14,7 +14,7 @@ public class MatchEventHandler {
 
     @EventListener
     public void handle(MatchCompletedEvent event) {
-        String msg = "[LoveConnect] 🎉 매칭 완료!\n" + event.matchMessage().getMessage();
+        String msg = "[LoveConnect]  매칭 완료!\n" + event.matchMessage().getMessage();
 
         // 🔥 전화번호 복호화 후 문자 전송
         String requesterPhone = AESUtil.decrypt(event.requester().getPhoneNumber());
