@@ -1,24 +1,20 @@
 package com.example.demo.login.member.domain.member;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity(name = "member")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String memberEmail;
 
     @Column(nullable = false)
@@ -27,7 +23,7 @@ public class Member {
     @Column(nullable = false)
     private String memberPassword;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String memberNickName;
 
     @Column(nullable = false)
@@ -40,10 +36,10 @@ public class Member {
     private String mbti;
 
     @Column(nullable = false)
-    private String birthDate; // e.g., "980826"
+    private String birthDate;
 
     @Column(nullable = false)
-    private String gender; // "MALE", "FEMALE" 등 ENUM 가능
+    private String gender;
 
     @Column(nullable = false)
     private boolean emailAgree;
