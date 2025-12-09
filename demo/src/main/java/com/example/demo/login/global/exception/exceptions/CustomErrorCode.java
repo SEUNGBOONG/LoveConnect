@@ -38,7 +38,8 @@ public enum CustomErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, "AUTH_001", "이미 사용중인 닉네임입니다."),
     DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, "AUTH_002", "이미 사용중인 이메일입니다."),
     NOT_SAME_PASSWORD(HttpStatus.UNAUTHORIZED, "AUTH_003", "비밀번호가 일치하지 않습니다."),
-    PHONE_AUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH_004", "전화번호 인증이 필요합니다.");
+    PHONE_AUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH_004", "전화번호 인증이 필요합니다."),
+    NOT_FOUND(HttpStatus.NOT_FOUND,"QUESTION_001" , "찾을 수가 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String customCode;
