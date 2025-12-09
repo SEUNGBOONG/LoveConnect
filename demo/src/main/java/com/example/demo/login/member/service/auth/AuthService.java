@@ -4,14 +4,13 @@ import com.example.demo.login.member.controller.auth.dto.LoginRequest;
 import com.example.demo.login.member.controller.auth.dto.NormalSignUpRequest;
 import com.example.demo.login.member.domain.auth.EmailValidator;
 import com.example.demo.login.member.domain.auth.SignUpValidator;
-import com.example.demo.login.member.domain.member.Member;
-import com.example.demo.login.member.exception.exceptions.MemberErrorCode;
-import com.example.demo.login.member.exception.exceptions.MemberException;
-import com.example.demo.login.member.exception.exceptions.auth.NotSamePasswordException;
 import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
 import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
+import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.util.AuthValidator;
+import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
+import com.example.demo.login.global.exception.exceptions.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,68 +26,35 @@ public class AuthService {
     private final SignUpValidator signUpValidator;
     private final EmailValidator emailValidator;
     private final AuthValidator authValidator;
-    private final PhoneAuthService phoneAuthService;   // ✅ 변경된 부분
+    private final PhoneAuthService phoneAuthService;
 
-    public Member normalSignUp(NormalSignUpRequest signUpRequest) {
+    public Member normalSignUp(NormalSignUpRequest request) {
+        emailValidator.validateEmailFormat(request.email());
+        signUpValidator.normalValidateSignupRequestFormat(request);
 
-        // ✅ 전화번호 인증 여부 체크 (변경된 로직)
-        if (!phoneAuthService.isVerified(signUpRequest.phoneNumber())) {
-            throw new MemberException(MemberErrorCode.PHONE_AUTH_REQUIRED);
-        }
+        // ⭐ 닉네임 중복 검사
+        authValidator.checkDuplicateMemberNickName(request.nickname());
 
-        // ✅ 요청 형식 검증
-        signUpValidator.normalValidateSignupRequestFormat(signUpRequest);
-        emailValidator.validateEmailFormat(signUpRequest.email());
+        // ⭐ 이메일 중복 검사
+        authValidator.checkDuplicateMemberEmail(request.email());
 
-        // ✅ 중복 체크
-        authValidator.checkDuplicateMemberNickName(signUpRequest.name());
-        authValidator.checkDuplicateMemberEmail(signUpRequest.email());
+        String encodedPassword = passwordEncoder.encode(request.password());
+        Member member = AuthMapper.toNormalMember(request, encodedPassword);
 
-        // ✅ 비밀번호 암호화
-        String encodedPassword = passwordEncoder.encode(signUpRequest.password());
-        Member member = AuthMapper.toNormalMember(signUpRequest, encodedPassword);
-
-        // ✅ DB 저장
-        Member savedMember = memberJpaRepository.save(member);
-
-        // ✅ 회원가입 완료 후 인증 플래그 삭제 (선택)
-        phoneAuthService.clearVerified(signUpRequest.phoneNumber());
-
-        return savedMember;
+        return memberJpaRepository.save(member);
     }
 
     @Transactional(readOnly = true)
-    public Member loginAndReturnMember(LoginRequest loginRequest) {
-        signUpValidator.validateLoginRequestFormat(loginRequest);
-        Member member = authValidator.findMemberByEmail(loginRequest.memberEmail());
+    public Member loginAndReturnMember(LoginRequest request) {
+        Member member = authValidator.findMemberByEmail(request.memberEmail());
 
-        AuthValidator.validatePasswordEncoderException(
-                passwordEncoder.matches(loginRequest.memberPassword(), member.getMemberPassword())
-        );
+        boolean isMatch = passwordEncoder.matches(request.memberPassword(), member.getMemberPassword());
+        AuthValidator.validatePasswordMatch(isMatch);
 
         return member;
     }
 
     public String generateToken(Long memberId) {
         return jwtTokenProvider.createToken(memberId);
-    }
-
-    @Transactional
-    public void changePassword(String email, String newPassword, String newPasswordConfirm) {
-        Member member = authValidator.findMemberByEmail(email);
-        validateNewPassword(newPassword, newPasswordConfirm);
-        signUpValidator.checkPasswordLength(newPassword);
-        String encodedPassword = passwordEncoder.encode(newPassword);  // 암호화
-        member.updatePassword(encodedPassword);
-    }
-
-    private static void validatePasswordEncoderException(final boolean passwordEncoder) {
-        if (!passwordEncoder) {
-            throw new NotSamePasswordException();
-        }
-    }
-
-    private static void validateNewPassword(final String newPassword, final String newPasswordConfirm) {
-        validatePasswordEncoderException(newPassword.equals(newPasswordConfirm));
     }
 }

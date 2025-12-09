@@ -1,46 +1,42 @@
 package com.example.demo.login.util;
 
 import com.example.demo.login.member.domain.member.Member;
-import com.example.demo.login.member.exception.exceptions.auth.DuplicateEmailException;
-import com.example.demo.login.member.exception.exceptions.auth.DuplicateNickNameException;
-import com.example.demo.login.member.exception.exceptions.auth.NotFoundMemberByEmailException;
-import com.example.demo.login.member.exception.exceptions.auth.NotSamePasswordException;
 import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
+import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
+import com.example.demo.login.global.exception.exceptions.CustomException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class AuthValidator {
 
     private final MemberJpaRepository memberJpaRepository;
 
-    public AuthValidator(final MemberJpaRepository memberJpaRepository) {
-        this.memberJpaRepository = memberJpaRepository;
-    }
-
-    public static void validatePasswordEncoderException(final boolean passwordEncoder) {
-        extracted(passwordEncoder);
-    }
-
+    /** 📌 이메일로 멤버 찾기 */
     public Member findMemberByEmail(String email) {
         return memberJpaRepository.findMemberByMemberEmail(email)
-                .orElseThrow(NotFoundMemberByEmailException::new);
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
     }
 
-    public void checkDuplicateMemberNickName(String nickName) {
-        if (memberJpaRepository.existsByMemberNickName(nickName)) {
-            throw new DuplicateNickNameException();
+    /** 📌 닉네임 중복 체크 (⭐핵심⭐) */
+    public void checkDuplicateMemberNickName(String nickname) {
+        if (memberJpaRepository.existsByMemberNickName(nickname)) {
+            throw new CustomException(CustomErrorCode.DUPLICATE_NICKNAME);
         }
     }
 
+    /** 📌 이메일 중복 체크 */
     public void checkDuplicateMemberEmail(String email) {
         if (memberJpaRepository.existsByMemberEmail(email)) {
-            throw new DuplicateEmailException();
+            throw new CustomException(CustomErrorCode.DUPLICATE_EMAIL);
         }
     }
 
-    private static void extracted(final boolean passwordEncoder) {
-        if (!passwordEncoder) {
-            throw new NotSamePasswordException();
+    /** 📌 비밀번호 match */
+    public static void validatePasswordMatch(boolean isMatch) {
+        if (!isMatch) {
+            throw new CustomException(CustomErrorCode.NOT_SAME_PASSWORD);
         }
     }
 }
