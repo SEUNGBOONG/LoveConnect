@@ -103,8 +103,15 @@ public class MatchRequestService {
     @Transactional(readOnly = true)
     public MatchResponseDto getMatchRequest(Long memberId) {
         Member requester = getMember(memberId);
-        MatchRequest request = matchRequestRepository.findByRequester(requester)
-                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
+
+        Optional<MatchRequest> opt = matchRequestRepository.findByRequester(requester);
+
+        // ❗ 매칭 요청 없을 때 200 응답 + null 반환
+        if (opt.isEmpty()) {
+            return null;
+        }
+
+        MatchRequest request = opt.get();
 
         return MatchResponseDto.builder()
                 .targetPhone(AESUtil.decrypt(request.getTargetPhoneNumber()))
