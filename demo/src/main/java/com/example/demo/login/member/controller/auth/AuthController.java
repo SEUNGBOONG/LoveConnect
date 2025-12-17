@@ -31,6 +31,7 @@ public class AuthController {
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(60 * 60);
         jwtCookie.setSecure(true);
+        jwtCookie.setDomain(".lovereconnect.co.kr");
         response.addCookie(jwtCookie);
 
         LoginResponse loginResponse = AuthMapper.toLoginResponse(member);
