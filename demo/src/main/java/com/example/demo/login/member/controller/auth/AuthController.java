@@ -44,7 +44,7 @@ public class AuthController {
         deleteCookie.setDomain(".lovereconnect.co.kr");
         deleteCookie.setPath("/");
         deleteCookie.setMaxAge(0);
-//        deleteCookie.setSecure(true);
+        deleteCookie.setSecure(true);
         response.addCookie(deleteCookie);
 
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
