@@ -106,9 +106,9 @@ public class MatchRequestService {
 
         Optional<MatchRequest> opt = matchRequestRepository.findByRequester(requester);
 
-        // ❗ 매칭 요청 없을 때 200 응답 + null 반환
         if (opt.isEmpty()) {
-            return null;
+            // ❗요청 안한 상태는 실패 응답을 유도하기 위해 예외 던짐
+            throw new CustomException(CustomErrorCode.MATCH_NOT_FOUND);
         }
 
         MatchRequest request = opt.get();
@@ -119,9 +119,14 @@ public class MatchRequestService {
                 .targetName(request.getTargetName())
                 .requesterDesire(request.getRequesterDesire())
                 .matched(request.isMatched())
-                .matchMessage(request.getMatchMessage() != null ? request.getMatchMessage().getMessage() : null)
+                .matchMessage(
+                        request.getMatchMessage() != null
+                                ? request.getMatchMessage().getMessage()
+                                : null
+                )
                 .build();
     }
+
 
     @Transactional
     public void updateMatchRequest(Long memberId, MatchRequestCommand command) {
