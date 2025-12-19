@@ -104,27 +104,21 @@ public class MatchRequestService {
     public MatchResponseDto getMatchRequest(Long memberId) {
         Member requester = getMember(memberId);
 
-        Optional<MatchRequest> opt = matchRequestRepository.findByRequester(requester);
-
-        if (opt.isEmpty()) {
-            // ❗요청 안한 상태는 실패 응답을 유도하기 위해 예외 던짐
-            throw new CustomException(CustomErrorCode.MATCH_NOT_FOUND);
-        }
-
-        MatchRequest request = opt.get();
-
-        return MatchResponseDto.builder()
-                .targetPhone(AESUtil.decrypt(request.getTargetPhoneNumber()))
-                .targetInsta(AESUtil.decrypt(request.getTargetInstagramId()))
-                .targetName(request.getTargetName())
-                .requesterDesire(request.getRequesterDesire())
-                .matched(request.isMatched())
-                .matchMessage(
-                        request.getMatchMessage() != null
-                                ? request.getMatchMessage().getMessage()
-                                : null
+        return matchRequestRepository.findByRequester(requester)
+                .map(request -> MatchResponseDto.builder()
+                        .targetPhone(AESUtil.decrypt(request.getTargetPhoneNumber()))
+                        .targetInsta(AESUtil.decrypt(request.getTargetInstagramId()))
+                        .targetName(request.getTargetName())
+                        .requesterDesire(request.getRequesterDesire())
+                        .matched(request.isMatched())
+                        .matchMessage(
+                                request.getMatchMessage() != null
+                                        ? request.getMatchMessage().getMessage()
+                                        : null
+                        )
+                        .build()
                 )
-                .build();
+                .orElse(null); // ❗ 요청이 없으면 null 반환
     }
 
 
