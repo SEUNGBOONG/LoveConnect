@@ -26,10 +26,13 @@ public class AttachmentTestService {
     private final AttachmentResultRepository resultRepository;
     private final MemberJpaRepository memberRepository;
 
+    @Transactional
     public AttachmentResultResponse evaluate(Long memberId, AttachmentSubmitRequest request) {
-
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MEMBER_NOT_FOUND));
+
+        // ✅ 기존 결과 삭제 (항상 최신 결과 1개만 유지)
+        resultRepository.deleteByMember(member);
 
         double anxiousSum = 0;
         double avoidantSum = 0;
@@ -53,6 +56,7 @@ public class AttachmentTestService {
         double avoidantAvg = avoidantSum / avoidantCount;
 
         String resultType = getResultType(anxiousAvg, avoidantAvg);
+        String resultDescription = getResultDescription(resultType);
 
         // ⭐ 결과 저장
         AttachmentResult result = AttachmentResult.builder()
@@ -65,7 +69,7 @@ public class AttachmentTestService {
 
         resultRepository.save(result);
 
-        return new AttachmentResultResponse(resultType, anxiousAvg, avoidantAvg);
+        return new AttachmentResultResponse(resultType, anxiousAvg, avoidantAvg, resultDescription);
     }
 
     @Transactional(readOnly = true)
@@ -82,15 +86,37 @@ public class AttachmentTestService {
                 .map(result -> new AttachmentResultResponse(
                         result.getResultType(),
                         result.getAnxiousScore(),
-                        result.getAvoidantScore()
+                        result.getAvoidantScore(),
+                        getResultDescription(result.getResultType())
                 ))
                 .toList();
     }
 
+    // 🔍 정교한 분류 로직 (비율 기반)
     private String getResultType(double anxious, double avoidant) {
-        if (anxious >= 3 && avoidant >= 3) return "공포회피형";
-        if (anxious >= 3) return "불안형";
-        if (avoidant >= 3) return "회피형";
-        return "안정형";
+        if (anxious >= 4 && avoidant >= 4) return "공포회피형";
+        if (anxious >= 4) return "불안형";
+        if (avoidant >= 4) return "회피형";
+
+        double total = anxious + avoidant;
+        double anxiousRate = (anxious / total) * 100;
+        double avoidantRate = (avoidant / total) * 100;
+
+        if (anxiousRate >= 40 && anxiousRate <= 60 && avoidantRate >= 40 && avoidantRate <= 60) {
+            return "안정형";
+        }
+
+        return "불확실";
+    }
+
+    // 🔍 유형별 설명 추가
+    private String getResultDescription(String resultType) {
+        return switch (resultType) {
+            case "안정형" -> "당신은 관계에서 안정감을 잘 느끼며 신뢰를 잘 쌓는 유형입니다.";
+            case "불안형" -> "당신은 상대의 반응에 민감하며 불안감을 자주 느낄 수 있습니다.";
+            case "회피형" -> "당신은 감정 표현에 거리감을 느끼며 독립성을 중요시합니다.";
+            case "공포회피형" -> "관계를 원하지만 동시에 두려움을 느끼는 복합적인 성향입니다.";
+            default -> "결과 해석이 어렵습니다.";
+        };
     }
 }
