@@ -3,6 +3,7 @@ package com.example.demo.community.post.service;
 import com.example.demo.community.post.domain.entity.Post;
 import com.example.demo.community.post.domain.repository.PostRepository;
 import com.example.demo.community.post.dto.request.PostCreateRequest;
+import com.example.demo.community.post.dto.request.PostSearchCondition;
 import com.example.demo.community.post.dto.request.PostUpdateRequest;
 import com.example.demo.community.post.dto.response.PostResponse;
 import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
@@ -52,15 +53,15 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
-    public List<PostResponse> getAll() {
-        return postRepository.findAllWithWriters().stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
     public Page<PostResponse> getAllPaged(Pageable pageable) {
         return postRepository.findAll(pageable)
+                .map(this::toResponse);
+    }
+
+    /** ✅ 게시글 검색 로직 추가 */
+    @Transactional(readOnly = true)
+    public Page<PostResponse> search(PostSearchCondition condition, Pageable pageable) {
+        return postRepository.searchPosts(condition, pageable)
                 .map(this::toResponse);
     }
 

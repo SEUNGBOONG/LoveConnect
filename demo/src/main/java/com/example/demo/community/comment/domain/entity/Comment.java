@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,6 +36,9 @@ public class Comment {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> children = new ArrayList<>();
 
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
     public Comment(Post post, Member writer, String content, Comment parent) {
         this.post = post;
         this.writer = writer;
@@ -47,9 +52,5 @@ public class Comment {
 
     public boolean isWriter(Member member) {
         return this.writer.equals(member);
-    }
-
-    public boolean isParent() {
-        return parent == null;
     }
 }

@@ -31,24 +31,19 @@ public class MatchRequestService {
     public void createMatchRequest(Long memberId, MatchRequestCommand command) {
         Member me = getMember(memberId);
 
-        // 사용자가 입력한 평문 값 (상대방 정보)
         String inputPhone = command.getTargetPhone().trim();
         String inputInsta = command.getTargetInsta().trim().toLowerCase();
 
-        // 암호화 후 저장할 값
         String encTargetPhone = AESUtil.encrypt(inputPhone);
         String encTargetInsta = AESUtil.encrypt(inputInsta);
 
-        // ✅ 내 정보 (이미 암호화된 상태임 — 회원 가입 시 암호화 저장)
         String myEncPhone = me.getPhoneNumber();
         String myEncInsta = me.getInstagramId();
 
-        // 🧾 중복 요청 방지
         if (matchRequestRepository.existsByRequester(me)) {
             throw new CustomException(CustomErrorCode.DUPLICATE_MATCH_REQUEST);
         }
 
-        // ✅ 내 요청 먼저 저장
         MatchRequest myRequest = MatchRequest.builder()
                 .requester(me)
                 .targetName(command.getTargetName())
@@ -62,7 +57,6 @@ public class MatchRequestService {
         matchRequestRepository.save(myRequest);
         log.info("📩 [내 요청 저장 완료] → {}", me.getMemberName());
 
-        // ✅ 역방향 요청이 있는지 확인 (상대가 나를 향해 보낸 요청)
         Optional<MatchRequest> reverseOpt =
                 matchRequestRepository.findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalseAndStatus(
                         myEncPhone, myEncInsta, MatchStatus.PENDING);
@@ -76,14 +70,12 @@ public class MatchRequestService {
 
             MatchMessage message = MatchScoreStrategy.calculate(myDesire, yourDesire);
 
-            // 💾 상대 요청 업데이트
             reverseReq.setMatched(true);
             reverseReq.setMatchedMember(me);
             reverseReq.setMatchMessage(message);
             reverseReq.setTargetDesire(myDesire);
             reverseReq.setStatus(MatchStatus.MATCHED);
 
-            // 💾 내 요청도 업데이트
             myRequest.setMatched(true);
             myRequest.setMatchedMember(opponent);
             myRequest.setMatchMessage(message);
@@ -118,9 +110,8 @@ public class MatchRequestService {
                         )
                         .build()
                 )
-                .orElse(null); // ❗ 요청이 없으면 null 반환
+                .orElse(null);
     }
-
 
     @Transactional
     public void updateMatchRequest(Long memberId, MatchRequestCommand command) {
@@ -143,15 +134,14 @@ public class MatchRequestService {
         );
     }
 
+    /**
+     * ✅ 매칭 상태와 관계없이 삭제 허용
+     */
     @Transactional
     public void deleteMatchRequest(Long memberId) {
         Member requester = getMember(memberId);
         MatchRequest request = matchRequestRepository.findByRequester(requester)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
-
-        if (request.isMatched()) {
-            throw new CustomException(CustomErrorCode.MATCH_ALREADY_COMPLETED);
-        }
 
         matchRequestRepository.delete(request);
     }

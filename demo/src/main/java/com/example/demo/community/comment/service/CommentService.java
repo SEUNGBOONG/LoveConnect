@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class CommentService {
@@ -37,7 +36,7 @@ public class CommentService {
                 .orElseThrow(() -> new CustomException(CustomErrorCode.POST_NOT_FOUND));
     }
 
-    /** ✅ 댓글 작성 (대댓글 포함) */
+    /** ✅ 댓글 작성 */
     @Transactional
     public CommentResponse create(Long memberId, CommentCreateRequest request) {
         Post post = getPost(request.postId());
@@ -49,10 +48,11 @@ public class CommentService {
                     .orElseThrow(() -> new CustomException(CustomErrorCode.COMMENT_NOT_FOUND));
         }
 
-        Comment comment = new Comment(post, writer, request.content(), parent);
-        Comment saved = commentRepository.save(comment);
+        Comment saved = commentRepository.save(
+                new Comment(post, writer, request.content(), parent)
+        );
 
-        return CommentResponse.basic(saved);
+        return CommentResponse.from(saved, memberId);
     }
 
     /** ✅ 댓글 수정 */
@@ -61,42 +61,32 @@ public class CommentService {
         Comment comment = commentRepository.findByIdWithWriter(commentId)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.COMMENT_NOT_FOUND));
 
-        Member writer = getMember(memberId);
-        if (!comment.isWriter(writer)) {
+        if (!comment.getWriter().getId().equals(memberId)) {
             throw new CustomException(CustomErrorCode.COMMENT_UNAUTHORIZED);
         }
 
         comment.updateContent(request.content());
-        return CommentResponse.basic(comment);
+        return CommentResponse.from(comment, memberId);
     }
 
-    /** ✅ 댓글 삭제 (대댓글도 함께 삭제됨) */
+    /** ✅ 댓글 삭제 */
     @Transactional
     public void delete(Long memberId, Long commentId) {
         Comment comment = commentRepository.findByIdWithWriter(commentId)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.COMMENT_NOT_FOUND));
 
-        Member writer = getMember(memberId);
-        if (!comment.isWriter(writer)) {
+        if (!comment.getWriter().getId().equals(memberId)) {
             throw new CustomException(CustomErrorCode.COMMENT_UNAUTHORIZED);
         }
 
-        commentRepository.delete(comment); // Cascade 옵션으로 children 자동 삭제
+        commentRepository.delete(comment);
     }
 
-    /** ✅ 게시글별 댓글 전체조회 (children 포함) */
+    /** ✅ 게시글 댓글 페이징 + 최신순 */
     @Transactional(readOnly = true)
-    public List<CommentResponse> getByPost(Long postId) {
-        return commentRepository.findAllByPostWithWriter(postId).stream()
-                .filter(Comment::isParent)
-                .map(CommentResponse::from)
-                .toList();
-    }
-
-    /** ✅ 게시글 댓글 페이징 (부모 기준) */
-    @Transactional(readOnly = true)
-    public Page<CommentResponse> getByPostPaged(Long postId, Pageable pageable) {
-        return commentRepository.findAllByPostIdAndParentIsNull(postId, pageable)
-                .map(CommentResponse::from);
+    public Page<CommentResponse> getByPostPaged(Long postId, Pageable pageable, Long memberId) {
+        return commentRepository
+                .findParentCommentsWithWritersAndChildren(postId, pageable)
+                .map(comment -> CommentResponse.from(comment, memberId));
     }
 }

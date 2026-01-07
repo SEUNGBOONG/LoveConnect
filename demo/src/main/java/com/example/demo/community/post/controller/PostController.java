@@ -51,13 +51,19 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(postService.getById(postId)));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<PostResponse>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.success(postService.getAll()));
-    }
+    // ✅ 전체조회 API (getAll) 제거 (성능 문제 방지)
 
     @GetMapping("/paged")
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getAllPaged(Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(postService.getAllPaged(pageable)));
+    }
+
+    /** ✅ 게시글 검색 API 추가 */
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> search(
+            @ModelAttribute PostSearchCondition condition, // @ModelAttribute 사용
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(postService.search(condition, pageable)));
     }
 }
