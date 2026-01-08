@@ -1,17 +1,15 @@
 package com.example.demo.community.post.controller;
 
 import com.example.demo.common.exception.ApiResponse;
-import com.example.demo.community.post.dto.response.*;
 import com.example.demo.community.post.dto.request.*;
+import com.example.demo.community.post.dto.response.PostResponse;
 import com.example.demo.community.post.service.PostService;
 import com.example.demo.login.global.annotation.Member;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/posts")
@@ -46,24 +44,29 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    /** ✅ 상세조회 (isMine 포함) */
     @GetMapping("/{postId}")
-    public ResponseEntity<ApiResponse<PostResponse>> get(@PathVariable Long postId) {
-        return ResponseEntity.ok(ApiResponse.success(postService.getById(postId)));
+    public ResponseEntity<ApiResponse<PostResponse>> get(
+            @Member Long memberId,
+            @PathVariable Long postId
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(postService.getById(memberId, postId)));
     }
-
-    // ✅ 전체조회 API (getAll) 제거 (성능 문제 방지)
 
     @GetMapping("/paged")
-    public ResponseEntity<ApiResponse<Page<PostResponse>>> getAllPaged(Pageable pageable) {
-        return ResponseEntity.ok(ApiResponse.success(postService.getAllPaged(pageable)));
-    }
-
-    /** ✅ 게시글 검색 API 추가 */
-    @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<PostResponse>>> search(
-            @ModelAttribute PostSearchCondition condition, // @ModelAttribute 사용
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> getAllPaged(
+            @Member Long memberId,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(ApiResponse.success(postService.search(condition, pageable)));
+        return ResponseEntity.ok(ApiResponse.success(postService.getAllPaged(memberId, pageable)));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<PostResponse>>> search(
+            @ModelAttribute PostSearchCondition condition,
+            @Member Long memberId,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(postService.search(condition, memberId, pageable)));
     }
 }

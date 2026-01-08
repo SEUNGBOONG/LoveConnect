@@ -16,8 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -29,7 +27,7 @@ public class PostService {
     public PostResponse create(Long memberId, PostCreateRequest request) {
         Member writer = getMember(memberId);
         Post post = new Post(writer, request.title(), request.content());
-        return toResponse(postRepository.save(post));
+        return toResponse(postRepository.save(post), memberId);
     }
 
     @Transactional
@@ -37,7 +35,7 @@ public class PostService {
         Post post = getPostWithWriter(postId);
         validateWriter(post, memberId);
         post.update(request.title(), request.content());
-        return toResponse(post);
+        return toResponse(post, memberId);
     }
 
     @Transactional
@@ -47,22 +45,23 @@ public class PostService {
         postRepository.delete(post);
     }
 
+    /** ✅ 상세조회 (isMine 필요) */
     @Transactional(readOnly = true)
-    public PostResponse getById(Long postId) {
-        return toResponse(getPostWithWriter(postId));
+    public PostResponse getById(Long memberId, Long postId) {
+        Post post = getPostWithWriter(postId);
+        return toResponse(post, memberId);
     }
 
     @Transactional(readOnly = true)
-    public Page<PostResponse> getAllPaged(Pageable pageable) {
+    public Page<PostResponse> getAllPaged(Long memberId, Pageable pageable) {
         return postRepository.findAll(pageable)
-                .map(this::toResponse);
+                .map(post -> toResponse(post, memberId));
     }
 
-    /** ✅ 게시글 검색 로직 추가 */
     @Transactional(readOnly = true)
-    public Page<PostResponse> search(PostSearchCondition condition, Pageable pageable) {
+    public Page<PostResponse> search(PostSearchCondition condition, Long memberId, Pageable pageable) {
         return postRepository.searchPosts(condition, pageable)
-                .map(this::toResponse);
+                .map(post -> toResponse(post, memberId));
     }
 
     private Post getPostWithWriter(Long id) {
@@ -81,8 +80,14 @@ public class PostService {
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
     }
 
-
-    private PostResponse toResponse(Post post) {
-        return new PostResponse(post.getId(), post.getTitle(), post.getContent(), post.getWriter().getMemberNickName());
+    private PostResponse toResponse(Post post, Long memberId) {
+        return new PostResponse(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getWriter().getMemberNickName(),
+                post.getWriter().getId().equals(memberId), // ✅ isMine
+                post.getCreatedAt()                        // ✅ createdAt
+        );
     }
 }

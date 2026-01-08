@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -20,6 +23,9 @@ public class Post {
 
     private String title;
     private String content;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt; // ✅ 추가
 
     public Post(Member writer, String title, String content) {
         this.writer = writer;
