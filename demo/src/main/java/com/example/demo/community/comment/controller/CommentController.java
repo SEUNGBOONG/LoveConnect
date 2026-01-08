@@ -3,6 +3,7 @@ package com.example.demo.community.comment.controller;
 import com.example.demo.common.exception.ApiResponse;
 import com.example.demo.community.comment.dto.request.CommentCreateRequest;
 import com.example.demo.community.comment.dto.request.CommentUpdateRequest;
+import com.example.demo.community.comment.dto.response.CommentPageResponse;
 import com.example.demo.community.comment.dto.response.CommentResponse;
 import com.example.demo.community.comment.service.CommentService;
 import com.example.demo.login.global.annotation.Member;
@@ -52,9 +53,8 @@ public class CommentController {
 
     // ✅ 게시글별 댓글 전체 조회 (getByPost) 제거 (성능 문제 방지)
 
-    /** ✅ 게시글별 댓글 페이징 조회 (최적화 적용) */
     @GetMapping("/post/{postId}/paged")
-    public ResponseEntity<ApiResponse<Page<CommentResponse>>> getByPostPaged(
+    public ResponseEntity<ApiResponse<CommentPageResponse>> getByPostPaged(
             @PathVariable Long postId,
             Pageable pageable,
             @Member Long memberId

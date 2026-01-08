@@ -4,6 +4,7 @@ import com.example.demo.community.comment.domain.entity.Comment;
 import com.example.demo.community.comment.domain.repository.CommentRepository;
 import com.example.demo.community.comment.dto.request.CommentCreateRequest;
 import com.example.demo.community.comment.dto.request.CommentUpdateRequest;
+import com.example.demo.community.comment.dto.response.CommentPageResponse;
 import com.example.demo.community.comment.dto.response.CommentResponse;
 import com.example.demo.community.post.domain.repository.PostRepository;
 import com.example.demo.login.member.domain.member.Member;
@@ -82,11 +83,17 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
-    /** ✅ 게시글 댓글 페이징 + 최신순 */
     @Transactional(readOnly = true)
-    public Page<CommentResponse> getByPostPaged(Long postId, Pageable pageable, Long memberId) {
-        return commentRepository
-                .findParentCommentsWithWritersAndChildren(postId, pageable)
-                .map(comment -> CommentResponse.from(comment, memberId));
+    public CommentPageResponse getByPostPaged(Long postId, Pageable pageable, Long memberId) {
+        Page<Comment> page = commentRepository.findParentCommentsWithWritersAndChildren(postId, pageable);
+
+        List<CommentResponse> responses = page.stream()
+                .map(comment -> CommentResponse.from(comment, memberId))
+                .toList();
+
+        // 🔥 전체 댓글 수 (부모 + 자식 포함) 구하기
+        Long totalCount = commentRepository.countByPostId(postId);
+
+        return new CommentPageResponse(responses, totalCount);
     }
 }
