@@ -11,7 +11,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, Comment
 
     // 부모 댓글 페이징 조회
     Page<Comment> findAllByPostIdAndParentIsNull(Long postId, Pageable pageable);
-
+    void deleteAllByPostId(Long postId);
     // CommentRepository.java
     long countByPostId(Long postId);
 

@@ -1,5 +1,6 @@
 package com.example.demo.community.post.service;
 
+import com.example.demo.community.comment.domain.repository.CommentRepository;
 import com.example.demo.community.post.domain.entity.Post;
 import com.example.demo.community.post.domain.repository.PostRepository;
 import com.example.demo.community.post.dto.request.PostCreateRequest;
@@ -22,6 +23,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final MemberJpaRepository memberJpaRepository;
+    private final CommentRepository commentRepository;
 
     @Transactional
     public PostResponse create(Long memberId, PostCreateRequest request) {
@@ -42,6 +44,10 @@ public class PostService {
     public void delete(Long memberId, Long postId) {
         Post post = getPostWithWriter(postId);
         validateWriter(post, memberId);
+
+        // 🔥 먼저 댓글 삭제
+        commentRepository.deleteAllByPostId(postId);
+
         postRepository.delete(post);
     }
 
