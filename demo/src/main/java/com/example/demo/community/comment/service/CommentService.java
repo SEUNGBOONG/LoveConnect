@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CommentService {
@@ -84,25 +85,15 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public CommentPageResponse getByPostPaged(Long postId, Pageable pageable, Long memberId) {
+    public Page<CommentResponse> getByPostPaged(
+            Long postId,
+            Pageable pageable,
+            Long memberId
+    ) {
         Page<Comment> page =
                 commentRepository.findParentCommentsWithWritersAndChildren(postId, pageable);
 
-        List<CommentResponse> responses = page.getContent().stream()
-                .map(comment -> CommentResponse.from(comment, memberId))
-                .toList();
-
-        long totalCount = commentRepository.countByPostId(postId);
-
-        return new CommentPageResponse(
-                responses,
-                totalCount,
-                page.getTotalPages(),
-                page.getNumber(),
-                page.getSize(),
-                page.isFirst(),
-                page.isLast(),
-                page.getNumberOfElements()
-        );
+        return page.map(comment -> CommentResponse.from(comment, memberId));
     }
+    
 }

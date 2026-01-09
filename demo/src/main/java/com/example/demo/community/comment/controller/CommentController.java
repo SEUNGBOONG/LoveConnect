@@ -54,13 +54,15 @@ public class CommentController {
     // ✅ 게시글별 댓글 전체 조회 (getByPost) 제거 (성능 문제 방지)
 
     @GetMapping("/post/{postId}/paged")
-    public ResponseEntity<ApiResponse<CommentPageResponse>> getByPostPaged(
+    public ResponseEntity<ApiResponse<Page<CommentResponse>>> getByPostPaged(
             @PathVariable Long postId,
             Pageable pageable,
             @Member Long memberId
     ) {
         return ResponseEntity.ok(
-                ApiResponse.success(commentService.getByPostPaged(postId, pageable, memberId))
+                ApiResponse.success(
+                        commentService.getByPostPaged(postId, pageable, memberId)
+                )
         );
     }
 }
