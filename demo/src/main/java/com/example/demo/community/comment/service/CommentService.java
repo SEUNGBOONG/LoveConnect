@@ -85,15 +85,24 @@ public class CommentService {
 
     @Transactional(readOnly = true)
     public CommentPageResponse getByPostPaged(Long postId, Pageable pageable, Long memberId) {
-        Page<Comment> page = commentRepository.findParentCommentsWithWritersAndChildren(postId, pageable);
+        Page<Comment> page =
+                commentRepository.findParentCommentsWithWritersAndChildren(postId, pageable);
 
-        List<CommentResponse> responses = page.stream()
+        List<CommentResponse> responses = page.getContent().stream()
                 .map(comment -> CommentResponse.from(comment, memberId))
                 .toList();
 
-        // 🔥 전체 댓글 수 (부모 + 자식 포함) 구하기
-        Long totalCount = commentRepository.countByPostId(postId);
+        long totalCount = commentRepository.countByPostId(postId);
 
-        return new CommentPageResponse(responses, totalCount);
+        return new CommentPageResponse(
+                responses,
+                totalCount,
+                page.getTotalPages(),
+                page.getNumber(),
+                page.getSize(),
+                page.isFirst(),
+                page.isLast(),
+                page.getNumberOfElements()
+        );
     }
 }
