@@ -8,5 +8,6 @@ public record MemberProfileResponse(
         String instagramId,
         String mbti,
         String gender,
-        String birthDate
+        String birthDate,
+        boolean emailAgree
 ) { }

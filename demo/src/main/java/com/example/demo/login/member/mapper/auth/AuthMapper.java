@@ -18,7 +18,8 @@ public class AuthMapper {
                 AESUtil.decrypt(member.getInstagramId()),
                 member.getMbti(),
                 member.getGender(),
-                member.getBirthDate()
+                member.getBirthDate(),
+                member.isEmailAgree()
         );
     }
 
