@@ -77,7 +77,7 @@ public class PostService {
 
     private void validateWriter(Post post, Long memberId) {
         if (!post.getWriter().getId().equals(memberId)) {
-            throw new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND);
+            throw new CustomException(CustomErrorCode.POST_UNAUTHORIZED); // 수정된 메시지로 변경
         }
     }
 

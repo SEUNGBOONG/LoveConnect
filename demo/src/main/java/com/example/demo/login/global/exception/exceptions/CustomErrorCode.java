@@ -14,6 +14,8 @@ public enum CustomErrorCode {
     CART_ITEM_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "CART_001", "이미 장바구니에 담긴 상품입니다."),
     CART_NOT_FOUND_ITEM(HttpStatus.BAD_REQUEST, "CART_002", "장바구니 아이템이 없습니다."),
     NOT_FOUND_DETAIL(HttpStatus.BAD_REQUEST, "DETAIL_001", "상세 정보가 없습니다."),
+    // 기존 에러코드 아래에 추가
+    POST_UNAUTHORIZED(HttpStatus.FORBIDDEN, "POST_002", "게시글 작성자가 아닙니다."),
 
     // 💘 매칭
     MATCH_ALREADY_REQUESTED(HttpStatus.BAD_REQUEST, "MATCH_001", "이미 한 명에게 요청을 보냈습니다."),

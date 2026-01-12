@@ -6,12 +6,12 @@ import com.example.demo.community.comment.dto.request.CommentCreateRequest;
 import com.example.demo.community.comment.dto.request.CommentUpdateRequest;
 import com.example.demo.community.comment.dto.response.CommentPageResponse;
 import com.example.demo.community.comment.dto.response.CommentResponse;
-import com.example.demo.community.post.domain.repository.PostRepository;
-import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.community.post.domain.entity.Post;
-import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
+import com.example.demo.community.post.domain.repository.PostRepository;
 import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
 import com.example.demo.login.global.exception.exceptions.CustomException;
+import com.example.demo.login.member.domain.member.Member;
+import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +38,7 @@ public class CommentService {
                 .orElseThrow(() -> new CustomException(CustomErrorCode.POST_NOT_FOUND));
     }
 
-    /** ✅ 댓글 작성 */
+    /** ✅ 댓글 작성 (createdAt null 문제 해결) */
     @Transactional
     public CommentResponse create(Long memberId, CommentCreateRequest request) {
         Post post = getPost(request.postId());
@@ -54,7 +54,13 @@ public class CommentService {
                 new Comment(post, writer, request.content(), parent)
         );
 
-        return CommentResponse.from(saved, memberId);
+        // 🔥 createdAt 보장
+        commentRepository.flush();
+
+        Comment found = commentRepository.findByIdWithWriter(saved.getId())
+                .orElseThrow(() -> new CustomException(CustomErrorCode.COMMENT_NOT_FOUND));
+
+        return CommentResponse.from(found, memberId);
     }
 
     /** ✅ 댓글 수정 */
@@ -84,16 +90,27 @@ public class CommentService {
         commentRepository.delete(comment);
     }
 
+    /** ✅ 게시글별 댓글 페이징 조회 (게시글과 동일한 Page 구조) */
     @Transactional(readOnly = true)
-    public Page<CommentResponse> getByPostPaged(
-            Long postId,
-            Pageable pageable,
-            Long memberId
-    ) {
-        Page<Comment> page =
-                commentRepository.findParentCommentsWithWritersAndChildren(postId, pageable);
+    public CommentPageResponse getByPostPaged(Long postId, Pageable pageable, Long memberId) {
+        Page<Comment> page = commentRepository.findParentCommentsWithWritersAndChildren(postId, pageable);
 
-        return page.map(comment -> CommentResponse.from(comment, memberId));
+        List<CommentResponse> responses = page.getContent().stream()
+                .map(comment -> CommentResponse.from(comment, memberId))
+                .toList();
+
+        long totalCount = commentRepository.countByPostId(postId); // 부모 + 자식 댓글 총합
+
+        return new CommentPageResponse(
+                responses,
+                totalCount,
+                page.getTotalPages(),
+                page.getNumber(),
+                page.getSize(),
+                page.isFirst(),
+                page.isLast(),
+                page.getNumberOfElements(),
+                page.isEmpty()
+        );
     }
-    
 }

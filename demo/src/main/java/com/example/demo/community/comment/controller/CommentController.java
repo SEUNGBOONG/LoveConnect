@@ -13,8 +13,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/comments")
 @RequiredArgsConstructor
@@ -28,7 +26,9 @@ public class CommentController {
             @Member Long memberId,
             @RequestBody CommentCreateRequest request
     ) {
-        return ResponseEntity.status(201).body(ApiResponse.success(commentService.create(memberId, request)));
+        return ResponseEntity
+                .status(201)
+                .body(ApiResponse.success(commentService.create(memberId, request)));
     }
 
     /** ✅ 댓글 수정 */
@@ -38,7 +38,9 @@ public class CommentController {
             @PathVariable Long commentId,
             @RequestBody CommentUpdateRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.success(commentService.update(memberId, commentId, request)));
+        return ResponseEntity.ok(
+                ApiResponse.success(commentService.update(memberId, commentId, request))
+        );
     }
 
     /** ✅ 댓글 삭제 */
@@ -51,10 +53,8 @@ public class CommentController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    // ✅ 게시글별 댓글 전체 조회 (getByPost) 제거 (성능 문제 방지)
-
     @GetMapping("/post/{postId}/paged")
-    public ResponseEntity<ApiResponse<Page<CommentResponse>>> getByPostPaged(
+    public ResponseEntity<ApiResponse<CommentPageResponse>> getByPostPaged(
             @PathVariable Long postId,
             Pageable pageable,
             @Member Long memberId
