@@ -6,11 +6,10 @@ import com.example.demo.login.member.controller.auth.dto.MemberUpdateRequest;
 import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.member.service.auth.AuthService;
-import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,23 +18,22 @@ import org.springframework.web.bind.annotation.*;
 public class MemberProfileController {
 
     private final AuthService authService;
-    private final JwtTokenProvider jwtTokenProvider;
 
-    private Long extractMemberIdFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
+    private Long getCurrentMemberId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) return null;
 
-        for (Cookie cookie : request.getCookies()) {
-            if ("token".equals(cookie.getName())) {
-                return jwtTokenProvider.getMemberIdFromToken(cookie.getValue());
-            }
+        try {
+            return Long.parseLong(authentication.getPrincipal().toString());
+        } catch (NumberFormatException e) {
+            return null;
         }
-        return null;
     }
 
     // ✅ 내 프로필 조회
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<MemberProfileResponse>> getProfile(HttpServletRequest request) {
-        Long memberId = extractMemberIdFromCookie(request);
+    public ResponseEntity<ApiResponse<MemberProfileResponse>> getProfile() {
+        Long memberId = getCurrentMemberId();
         if (memberId == null) {
             return ResponseEntity
                     .status(401)
@@ -49,10 +47,9 @@ public class MemberProfileController {
     // ✅ 내 프로필 수정
     @PatchMapping("/me")
     public ResponseEntity<ApiResponse<String>> updateProfile(
-            HttpServletRequest request,
             @RequestBody MemberUpdateRequest updateRequest
     ) {
-        Long memberId = extractMemberIdFromCookie(request);
+        Long memberId = getCurrentMemberId();
         if (memberId == null) {
             return ResponseEntity
                     .status(401)
