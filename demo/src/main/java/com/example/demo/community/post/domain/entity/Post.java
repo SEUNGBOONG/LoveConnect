@@ -5,9 +5,9 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Entity
 @Getter
@@ -24,8 +24,13 @@ public class Post {
     private String title;
     private String content;
 
-    @CreationTimestamp
-    private LocalDateTime createdAt; // ✅ 추가
+    @Column(nullable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+    }
 
     public Post(Member writer, String title, String content) {
         this.writer = writer;
@@ -36,9 +41,5 @@ public class Post {
     public void update(String title, String content) {
         this.title = title;
         this.content = content;
-    }
-
-    public boolean isWriter(Member member) {
-        return this.writer.equals(member);
     }
 }

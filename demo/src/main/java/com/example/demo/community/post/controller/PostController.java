@@ -8,6 +8,8 @@ import com.example.demo.login.global.annotation.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,7 +58,10 @@ public class PostController {
     @GetMapping("/paged")
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getAllPaged(
             @Member Long memberId,
-            Pageable pageable
+            @PageableDefault(
+                    sort = "createdAt",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(postService.getAllPaged(memberId, pageable)));
     }

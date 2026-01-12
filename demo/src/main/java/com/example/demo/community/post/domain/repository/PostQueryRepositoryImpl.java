@@ -59,7 +59,7 @@ public class PostQueryRepositoryImpl implements PostQueryRepository {
             }
         }
 
-        jpql += " order by p.id desc";
+        jpql += " order by p.createdAt desc";
 
         // 데이터 조회 쿼리
         var query = em.createQuery(jpql, Post.class);
