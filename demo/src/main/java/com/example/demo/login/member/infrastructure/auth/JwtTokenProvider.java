@@ -32,6 +32,10 @@ public class JwtTokenProvider implements Token {
                 .sign(algorithm);
 
     }
+    public Long getMemberIdFromToken(String token) {
+        DecodedJWT decodedJWT = verifyToken(token);
+        return decodedJWT.getClaim("memberId").asLong();
+    }
 
     @Override
     public DecodedJWT verifyToken(String token) {
