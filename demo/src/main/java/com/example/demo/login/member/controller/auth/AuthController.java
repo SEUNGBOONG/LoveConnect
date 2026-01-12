@@ -3,6 +3,7 @@ package com.example.demo.login.member.controller.auth;
 import com.example.demo.common.exception.ApiResponse;
 import com.example.demo.login.member.controller.auth.dto.LoginRequest;
 import com.example.demo.login.member.controller.auth.dto.LoginResponse;
+import com.example.demo.login.member.controller.auth.dto.PasswordResetRequest;
 import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.member.service.auth.AuthService;
@@ -27,7 +28,7 @@ public class AuthController {
         String token = authService.generateToken(member.getId());
 
         Cookie jwtCookie = new Cookie("token", token);
-//        jwtCookie.setHttpOnly(true);
+        jwtCookie.setHttpOnly(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(60 * 60);
         jwtCookie.setSecure(true);
@@ -48,5 +49,11 @@ public class AuthController {
         response.addCookie(deleteCookie);
 
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
+    }
+
+    @PostMapping("/auth/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody PasswordResetRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
