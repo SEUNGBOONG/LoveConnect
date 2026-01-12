@@ -2,11 +2,25 @@ package com.example.demo.login.member.mapper.auth;
 
 import com.example.demo.common.util.AESUtil;
 import com.example.demo.login.member.controller.auth.dto.LoginResponse;
+import com.example.demo.login.member.controller.auth.dto.MemberProfileResponse;
 import com.example.demo.login.member.controller.auth.dto.NormalSignUpRequest;
 import com.example.demo.login.member.controller.auth.dto.SignUpResponse;
 import com.example.demo.login.member.domain.member.Member;
 
 public class AuthMapper {
+
+    public static MemberProfileResponse toMemberProfileResponse(Member member) {
+        return new MemberProfileResponse(
+                member.getMemberEmail(),
+                member.getMemberName(),
+                member.getMemberNickName(),
+                AESUtil.decrypt(member.getPhoneNumber()),
+                AESUtil.decrypt(member.getInstagramId()),
+                member.getMbti(),
+                member.getGender(),
+                member.getBirthDate()
+        );
+    }
 
     public static Member toNormalMember(NormalSignUpRequest request, String encodedPassword) {
         String birthDate = request.birthYear().substring(2) +

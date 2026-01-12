@@ -1,5 +1,6 @@
 package com.example.demo.login.member.domain.member;
 
+import com.example.demo.common.util.AESUtil;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -49,6 +50,17 @@ public class Member {
 
     @Column(nullable = false)
     private boolean useAgree;
+
+    public void updateProfile(String nickname, String instagramId, String mbti, Boolean emailAgree) {
+        this.memberNickName = nickname;
+        this.instagramId = AESUtil.encrypt(instagramId);
+        this.mbti = mbti;
+        this.emailAgree = emailAgree;
+    }
+
+    public void changePassword(String newEncodedPassword) {
+        this.memberPassword = newEncodedPassword;
+    }
 
     public void updatePassword(String newPassword) {
         this.memberPassword = newPassword;

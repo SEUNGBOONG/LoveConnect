@@ -1,7 +1,10 @@
 package com.example.demo.login.member.service.auth;
 
+import com.example.demo.common.util.AESUtil;
 import com.example.demo.login.member.controller.auth.dto.LoginRequest;
+import com.example.demo.login.member.controller.auth.dto.MemberUpdateRequest;
 import com.example.demo.login.member.controller.auth.dto.NormalSignUpRequest;
+import com.example.demo.login.member.controller.auth.dto.PasswordResetRequest;
 import com.example.demo.login.member.domain.auth.EmailValidator;
 import com.example.demo.login.member.domain.auth.SignUpValidator;
 import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
@@ -59,6 +62,43 @@ public class AuthService {
         AuthValidator.validatePasswordMatch(isMatch);
 
         return member;
+    }
+
+    public Member getById(Long id) {
+        return memberJpaRepository.findById(id)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MEMBER_NOT_FOUND));
+    }
+
+    @Transactional
+    public void updateProfile(Long memberId, MemberUpdateRequest request) {
+        Member member = getById(memberId);
+
+        member.updateProfile(
+                request.nickname(),
+                request.instagramId(),
+                request.mbti(),
+                request.emailAgree()
+        );
+    }
+
+    public void resetPassword(PasswordResetRequest request) {
+        // 1️⃣ 인증 여부 체크 (Redis)
+        if (!phoneAuthService.isVerified(request.phoneNumber())) {
+            throw new CustomException(CustomErrorCode.PHONE_AUTH_REQUIRED);
+        }
+
+        // 2️⃣ 암호화된 전화번호로 사용자 조회
+        String encryptedPhone = AESUtil.encrypt(request.phoneNumber());
+
+        Member member = memberJpaRepository.findByPhoneNumber(encryptedPhone)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MEMBER_NOT_FOUND));
+
+        // 3️⃣ 비밀번호 암호화 후 저장
+        String encodedPassword = passwordEncoder.encode(request.newPassword());
+        member.changePassword(encodedPassword);
+
+        // 4️⃣ 인증 정보 제거 (1회성)
+        phoneAuthService.clearVerified(request.phoneNumber());
     }
 
     public String generateToken(Long memberId) {
