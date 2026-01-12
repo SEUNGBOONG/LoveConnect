@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -21,22 +20,36 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .logout(logout -> logout.disable())
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
+
                 .authorizeHttpRequests(auth -> auth
+                        // ✅ 인증 없이 가능한 API
                         .requestMatchers(
                                 "/login",
                                 "/logout",
                                 "/auth/**",
+                                "/normalMembers",
+                                "/phone/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
-                                "/webjars/**",
-                                "/profile/**",
-                                "/normalMembers",
-                                "/phone/**"
+                                "/webjars/**"
                         ).permitAll()
+
+                        // ✅ 로그인 필요한 API
+                        .requestMatchers("/profile/**").authenticated()
+                        .requestMatchers("/matches/**").authenticated()
+                        .requestMatchers("/comments/**").authenticated()
+                        .requestMatchers("/posts/**").authenticated()
+
+                        // 나머지는 전부 인증 필요
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtCookieFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+
+                // ✅ JWT 쿠키 필터
+                .addFilterBefore(
+                        new JwtCookieFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
