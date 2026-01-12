@@ -34,7 +34,7 @@ dependencies {
 	implementation 'com.fasterxml.jackson.core:jackson-core'
 	implementation 'com.fasterxml.jackson.core:jackson-annotations'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
-
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 	// JWT & JSON
 	implementation 'com.auth0:java-jwt:4.2.1'
 	implementation 'org.json:json:20231013'
