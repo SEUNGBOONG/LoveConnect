@@ -13,7 +13,6 @@ public class DemoApplication {
 		SpringApplication.run(DemoApplication.class, args);
 	}
 
-	// ✅ 서버 전체 타임존을 한국시간으로 고정
 	@PostConstruct
 	public void setTimeZone() {
 		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));
