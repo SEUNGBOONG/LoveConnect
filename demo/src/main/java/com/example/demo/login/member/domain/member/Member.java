@@ -4,6 +4,8 @@ import com.example.demo.common.util.AESUtil;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity(name = "member")
 @Getter
 @Builder
@@ -50,6 +52,23 @@ public class Member {
 
     @Column(nullable = false)
     private boolean useAgree;
+
+    @Column(nullable = false)
+    private boolean isDeleted = false;
+
+    @Column
+    private LocalDateTime withdrawnAt;
+
+    public void withdraw() {
+        this.isDeleted = true;
+        this.withdrawnAt = LocalDateTime.now();
+
+        // 민감 정보 비우기 (선택)
+        this.memberPassword = null;
+        this.phoneNumber = null;
+        this.instagramId = null;
+        this.memberNickName = "탈퇴한 회원";
+    }
 
     public void updateProfile(String nickname, String instagramId, String mbti, Boolean emailAgree) {
         this.memberNickName = nickname;

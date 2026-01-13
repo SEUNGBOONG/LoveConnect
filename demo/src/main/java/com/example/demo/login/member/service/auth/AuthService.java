@@ -55,10 +55,21 @@ public class AuthService {
         return memberJpaRepository.save(member);
     }
 
+    @Transactional
+    public void withdrawMember(Long memberId) {
+        Member member = getById(memberId);
+        member.withdraw();
+    }
+
+
     @Transactional(readOnly = true)
     public Member loginAndReturnMember(LoginRequest request) {
         Member member = authValidator.findMemberByEmail(request.memberEmail());
 
+        // 🔒 소프트 딜리트된 회원 차단
+        if (member.isDeleted()) {
+            throw new CustomException(CustomErrorCode.MEMBER_WITHDRAWN);
+        }
         boolean isMatch = passwordEncoder.matches(request.memberPassword(), member.getMemberPassword());
         AuthValidator.validatePasswordMatch(isMatch);
 

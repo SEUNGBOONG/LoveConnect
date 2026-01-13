@@ -59,4 +59,15 @@ public class MemberProfileController {
         authService.updateProfile(memberId, updateRequest);
         return ResponseEntity.ok(ApiResponse.success("프로필이 수정되었습니다."));
     }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse<String>> withdraw() {
+        Long memberId = getCurrentMemberId();
+        if (memberId == null) {
+            return ResponseEntity.status(401).body(ApiResponse.fail("UNAUTHORIZED", "로그인이 필요합니다."));
+        }
+
+        authService.withdrawMember(memberId);
+        return ResponseEntity.ok(ApiResponse.success("회원 탈퇴가 완료되었습니다."));
+    }
 }
