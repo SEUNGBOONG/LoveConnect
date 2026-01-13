@@ -20,6 +20,7 @@ public class CorsConfig {
                 "https://www.lovereconnect.co.kr",
                 "https://api.lovereconnect.co.kr",
                 "https://러브리커넥트.apps.tossmini.com",
+                "http://localhost:3000",
                 "https://러브리커넥트.private-apps.tossmini.com"
         ));
 
