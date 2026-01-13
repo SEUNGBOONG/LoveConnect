@@ -7,6 +7,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+
 @Configuration
 public class CorsConfig {
 
@@ -14,34 +15,20 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // ⭐ 반드시 실제 프론트 도메인만 명시
-        config.setAllowedOrigins(List.of(
+        config.setAllowedOriginPatterns(List.of(
                 "https://lovereconnect.co.kr",
                 "https://www.lovereconnect.co.kr",
                 "https://api.lovereconnect.co.kr",
-                "https://러브리커넥트.apps.tossmini.com",
-                "http://localhost:3000",
-                "https://러브리커넥트.private-apps.tossmini.com"
+                "https://*.tossmini.com",
+                "http://localhost:3000"
         ));
 
-        config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
-        ));
-
-        config.setAllowedHeaders(List.of(
-                "Origin",
-                "Content-Type",
-                "Accept",
-                "Authorization"
-        ));
-
-        // ⭐ 쿠키 인증의 핵심
-        config.setAllowCredentials(true);
-
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization"));
+        config.setAllowCredentials(true); // 쿠키 포함을 허용
         config.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source =
-                new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
