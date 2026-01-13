@@ -1,5 +1,6 @@
 package com.example.demo.login.util;
 
+import com.example.demo.common.util.AESUtil;
 import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
 import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
@@ -19,7 +20,7 @@ public class AuthValidator {
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
     }
 
-    /** 📌 닉네임 중복 체크 (⭐핵심⭐) */
+    /** 📌 닉네임 중복 체크 */
     public void checkDuplicateMemberNickName(String nickname) {
         if (memberJpaRepository.existsByMemberNickName(nickname)) {
             throw new CustomException(CustomErrorCode.DUPLICATE_NICKNAME);
@@ -30,6 +31,14 @@ public class AuthValidator {
     public void checkDuplicateMemberEmail(String email) {
         if (memberJpaRepository.existsByMemberEmail(email)) {
             throw new CustomException(CustomErrorCode.DUPLICATE_EMAIL);
+        }
+    }
+
+    /** ✅ 전화번호 중복 체크 (🔥 추가 🔥) */
+    public void checkDuplicatePhoneNumber(String phoneNumber) {
+        String encryptedPhone = AESUtil.encrypt(phoneNumber);
+        if (memberJpaRepository.existsByPhoneNumber(encryptedPhone)) {
+            throw new CustomException(CustomErrorCode.DUPLICATE_PHONE_NUMBER);
         }
     }
 

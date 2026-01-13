@@ -9,7 +9,7 @@ public enum CustomErrorCode {
     // 🔐 Token 관련
     NOT_FIND_TOKEN(HttpStatus.UNAUTHORIZED, "T001", "토큰을 찾을 수 없습니다."),
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "T002", "토큰이 만료됐습니다."),
-
+    DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT,"PHONE_003", "이미 가입된 전화번호입니다."),
     // 🛒 장바구니 예시
     CART_ITEM_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "CART_001", "이미 장바구니에 담긴 상품입니다."),
     CART_NOT_FOUND_ITEM(HttpStatus.BAD_REQUEST, "CART_002", "장바구니 아이템이 없습니다."),

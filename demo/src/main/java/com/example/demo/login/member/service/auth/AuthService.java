@@ -44,6 +44,7 @@ public class AuthService {
 
         authValidator.checkDuplicateMemberNickName(request.nickname());
         authValidator.checkDuplicateMemberEmail(request.email());
+        authValidator.checkDuplicatePhoneNumber(request.phoneNumber());
 
         String encodedPassword = passwordEncoder.encode(request.password());
         Member member = AuthMapper.toNormalMember(request, encodedPassword);
