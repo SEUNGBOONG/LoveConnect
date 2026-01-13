@@ -18,6 +18,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(
                 "https://lovereconnect.co.kr",
                 "https://www.lovereconnect.co.kr",
+                "https://api.lovereconnect.co.kr",
                 "https://러브리커넥트.apps.tossmini.com",
                 "https://러브리커넥트.private-apps.tossmini.com"
         ));
