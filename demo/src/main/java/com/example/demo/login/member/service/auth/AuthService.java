@@ -81,6 +81,7 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public void resetPassword(PasswordResetRequest request) {
         // 1️⃣ 인증 여부 체크 (Redis)
         if (!phoneAuthService.isVerified(request.phoneNumber())) {
