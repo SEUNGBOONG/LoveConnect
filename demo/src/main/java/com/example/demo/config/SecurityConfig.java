@@ -8,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -23,32 +24,33 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ OPTIONS 요청 전부 허용 (CORS 핵심)
+                        // ✅ OPTIONS 요청 허용 (CORS preflight)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ 인증 없이 가능한 API
-                        .requestMatchers(
-                                "/login",
-                                "/logout",
-                                "/reset-password",
-                                "/normalMembers",
-                                "/phone/**",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**"
-                        ).permitAll()
+                        // ✅ 인증 없이 접근 가능한 API (로그인/회원가입/비번찾기 등)
+                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/normalMembers").permitAll()
+                        .requestMatchers("/phone/**").permitAll()
 
-                        // ✅ 로그인 필요한 API
+                        // ✅ Swagger 문서용
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-resources/**").permitAll()
+                        .requestMatchers("/webjars/**").permitAll()
+
+                        // ✅ 인증 필요한 API
                         .requestMatchers("/profile/**").authenticated()
                         .requestMatchers("/matches/**").authenticated()
                         .requestMatchers("/comments/**").authenticated()
                         .requestMatchers("/posts/**").authenticated()
 
+                        // ✅ 그 외는 모두 인증 필요
                         .anyRequest().authenticated()
                 )
 
-                // ✅ JWT 쿠키 필터
+                // ✅ JWT 쿠키 필터 적용
                 .addFilterBefore(
                         new JwtCookieFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class
