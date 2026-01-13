@@ -20,7 +20,9 @@ public class CorsConfig {
                 "https://www.lovereconnect.co.kr",
                 "https://api.lovereconnect.co.kr",
                 "https://*.tossmini.com",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "http://localhost:5173"
+
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
