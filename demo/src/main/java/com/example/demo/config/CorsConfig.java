@@ -14,22 +14,32 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 🔄 여기만 수정
-        config.setAllowedOriginPatterns(List.of("*")); // 와일드카드 허용 (개발용 Swagger 포함)
+        // ⭐ 반드시 실제 프론트 도메인만 명시
+        config.setAllowedOrigins(List.of(
+                "https://lovereconnect.co.kr",
+                "https://www.lovereconnect.co.kr",
+                "https://러브리커넥트.apps.tossmini.com",
+                "https://러브리커넥트.private-apps.tossmini.com"
+        ));
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        ));
+
         config.setAllowedHeaders(List.of(
                 "Origin",
                 "Content-Type",
                 "Accept",
-                "Authorization",
-                "Cookie",
-                "X-Req-Nonce"
+                "Authorization"
         ));
+
+        // ⭐ 쿠키 인증의 핵심
         config.setAllowCredentials(true);
+
         config.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }

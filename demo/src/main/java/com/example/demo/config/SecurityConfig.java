@@ -27,6 +27,7 @@ public class SecurityConfig {
                                 "/login",
                                 "/logout",
                                 "/auth/**",
+                                "/reset-password",
                                 "/normalMembers",
                                 "/phone/**",
                                 "/swagger-ui/**",

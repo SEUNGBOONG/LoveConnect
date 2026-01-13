@@ -51,7 +51,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
     }
 
-    @PostMapping("/auth/reset-password")
+    @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody PasswordResetRequest request) {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success(null));
