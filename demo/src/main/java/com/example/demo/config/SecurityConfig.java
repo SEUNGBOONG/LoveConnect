@@ -4,6 +4,7 @@ import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -22,11 +23,13 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
 
                 .authorizeHttpRequests(auth -> auth
+                        // ✅ OPTIONS 요청 전부 허용 (CORS 핵심)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // ✅ 인증 없이 가능한 API
                         .requestMatchers(
                                 "/login",
                                 "/logout",
-                                "/auth/**",
                                 "/reset-password",
                                 "/normalMembers",
                                 "/phone/**",
@@ -42,7 +45,6 @@ public class SecurityConfig {
                         .requestMatchers("/comments/**").authenticated()
                         .requestMatchers("/posts/**").authenticated()
 
-                        // 나머지는 전부 인증 필요
                         .anyRequest().authenticated()
                 )
 
