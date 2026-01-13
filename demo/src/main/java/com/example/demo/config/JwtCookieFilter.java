@@ -24,35 +24,28 @@ public class JwtCookieFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
-    ) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         String token = extractTokenFromCookie(request);
 
-        if (token != null) {
-            try {
-                DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
-                Long memberId = jwt.getClaim("memberId").asLong();
+        // ✅ 토큰 없으면 그냥 인증 시도 안 하고 통과
+        if (token == null || token.isBlank()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                // ✅ 핵심: Spring Security 인증 객체 생성
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                memberId,        // principal
-                                null,            // credentials
-                                List.of()        // 권한 (지금은 비워도 됨)
-                        );
+        try {
+            DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
+            Long memberId = jwt.getClaim("memberId").asLong();
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
-
-            } catch (Exception e) {
-                // 토큰 이상 → 인증 정보 제거
-                SecurityContextHolder.clearContext();
-                System.out.println("❌ Invalid JWT: " + e.getMessage());
-            }
+            Authentication authentication = new UsernamePasswordAuthenticationToken(
+                    memberId, null, List.of()
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (Exception e) {
+            // ❌ 여기서 인증 실패하더라도 아무것도 안 하고 그냥 넘김 (403 방지)
+            System.out.println("❌ Invalid JWT: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);
