@@ -27,30 +27,37 @@ public class SecurityConfig {
                         // ✅ OPTIONS 요청 허용 (CORS preflight)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ 인증 없이 접근 가능한 API (로그인/회원가입/비번찾기 등)
+                        // ✅ 인증 없이 접근 가능한 API
                         .requestMatchers(HttpMethod.POST, "/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/reset-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/normalMembers").permitAll()
                         .requestMatchers("/phone/**").permitAll()
 
-                        // ✅ Swagger 문서용
+                        // ✅ Swagger
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
                         .requestMatchers("/webjars/**").permitAll()
 
-                        // ✅ 인증 필요한 API
+                        // 🔥 게시글 조회는 로그인 없이 허용
+                        .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
+
+                        // 🔥 게시글 작성/수정/삭제는 로그인 필요
+                        .requestMatchers(HttpMethod.POST, "/posts/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/posts/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/posts/**").authenticated()
+
+                        // ✅ 그 외 인증 필요한 API
                         .requestMatchers("/profile/**").authenticated()
                         .requestMatchers("/matches/**").authenticated()
                         .requestMatchers("/comments/**").authenticated()
-                        .requestMatchers("/posts/**").authenticated()
 
-                        // ✅ 그 외는 모두 인증 필요
+                        // ✅ 나머지는 모두 인증 필요
                         .anyRequest().authenticated()
                 )
 
-                // ✅ JWT 쿠키 필터 적용
+                // ✅ JWT 쿠키 필터
                 .addFilterBefore(
                         new JwtCookieFilter(jwtTokenProvider),
                         UsernamePasswordAuthenticationFilter.class
