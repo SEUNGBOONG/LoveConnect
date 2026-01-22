@@ -24,12 +24,15 @@ public class JwtCookieFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String uri = request.getRequestURI();
 
-        // 🔥 인증 없이 접근 가능한 경로 → 필터 건너뛰기
+        // 🔥 인증 없이 접근 가능한 경로 → 필터 패스
         if (isPermitAllPath(uri)) {
             filterChain.doFilter(request, response);
             return;
@@ -37,6 +40,7 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromCookie(request);
 
+        // 🔐 토큰 없음 → 인증 안 된 상태로 통과
         if (token == null || token.isBlank()) {
             filterChain.doFilter(request, response);
             return;
@@ -46,13 +50,18 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
             Long memberId = jwt.getClaim("memberId").asLong();
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    memberId, null, List.of()
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            Authentication authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            memberId,
+                            null,
+                            List.of()
+                    );
+
+            SecurityContextHolder.getContext()
+                    .setAuthentication(authentication);
+
         } catch (Exception e) {
-            // ❌ 유효하지 않은 토큰이더라도 인증 실패만 하고 통과
-            System.out.println("❌ Invalid JWT: " + e.getMessage());
+            // ❌ 토큰 이상 → 인증 실패 상태로 통과
             SecurityContextHolder.clearContext();
         }
 
@@ -71,7 +80,6 @@ public class JwtCookieFilter extends OncePerRequestFilter {
     }
 
     private boolean isPermitAllPath(String uri) {
-        // 🔥 인증 없이 접근 가능한 경로들 추가
         return uri.equals("/login")
                 || uri.equals("/logout")
                 || uri.equals("/reset-password")

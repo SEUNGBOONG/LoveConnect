@@ -1,8 +1,17 @@
 package com.example.demo.login.member.domain.member;
 
 import com.example.demo.common.util.AESUtil;
-import jakarta.persistence.*;
-import lombok.*;
+import com.example.demo.match.domain.MatchChannelType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -32,8 +41,13 @@ public class Member {
     @Column(nullable = false)
     private String phoneNumber;
 
+    /** 🔥 인스타그램 ID (암호화 저장) */
     @Column(nullable = false)
     private String instagramId;
+
+    /** 🔥 틱톡 ID (암호화 저장, 선택값) */
+    @Column
+    private String tiktokId;
 
     @Column(nullable = false)
     private String mbti;
@@ -59,20 +73,38 @@ public class Member {
     @Column
     private LocalDateTime withdrawnAt;
 
+    /* =========================
+       비즈니스 메서드
+       ========================= */
+
     public void withdraw() {
         this.isDeleted = true;
         this.withdrawnAt = LocalDateTime.now();
 
-        // 민감 정보 비우기 (선택)
         this.memberPassword = null;
         this.phoneNumber = null;
         this.instagramId = null;
+        this.tiktokId = null;
         this.memberNickName = "탈퇴한 회원";
     }
 
-    public void updateProfile(String nickname, String instagramId, String mbti, Boolean emailAgree) {
+    public void updateProfile(
+            String nickname,
+            String instagramId,
+            String tiktokId,
+            String mbti,
+            Boolean emailAgree
+    ) {
         this.memberNickName = nickname;
-        this.instagramId = AESUtil.encrypt(instagramId);
+
+        if (instagramId != null) {
+            this.instagramId = AESUtil.encrypt(instagramId.trim().toLowerCase());
+        }
+
+        if (tiktokId != null) {
+            this.tiktokId = AESUtil.encrypt(tiktokId.trim().toLowerCase());
+        }
+
         this.mbti = mbti;
         this.emailAgree = emailAgree;
     }
@@ -83,5 +115,18 @@ public class Member {
 
     public void updatePassword(String newPassword) {
         this.memberPassword = newPassword;
+    }
+
+    /**
+     * 🔥 매칭용 소셜 ID 조회 (채널 기준)
+     */
+    public String getSocialIdByChannel(MatchChannelType channelType) {
+        if (channelType == MatchChannelType.INSTAGRAM) {
+            return instagramId;
+        }
+        if (channelType == MatchChannelType.TIKTOK) {
+            return tiktokId;
+        }
+        throw new IllegalArgumentException("지원하지 않는 매칭 채널입니다.");
     }
 }

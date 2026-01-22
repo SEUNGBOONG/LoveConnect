@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MatchRequestCommand {
+
     private String targetPhone;
-    private String targetInsta;
+    private String targetSocialId; // 인스타 or 틱톡
     private String targetName;
     private int requesterDesire;
 }
