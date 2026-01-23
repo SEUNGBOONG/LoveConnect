@@ -11,14 +11,10 @@ import java.util.Optional;
 public interface MemberJpaRepository extends JpaRepository<Member, Long> {
 
     boolean existsByMemberNickName(String memberNickName);
-
     boolean existsByMemberEmail(String memberEmail);
-
     Optional<Member> findByPhoneNumber(String phoneNumber);
-
     boolean existsByPhoneNumber(String phoneNumber); // ✅ 추가
 
     Optional<Member> findMemberByMemberEmail(String memberEmail);
-
     List<Member> findAll();
 }

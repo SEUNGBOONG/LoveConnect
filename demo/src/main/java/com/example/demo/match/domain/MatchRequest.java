@@ -1,6 +1,8 @@
 package com.example.demo.match.domain;
 
 import com.example.demo.login.member.domain.member.Member;
+import com.example.demo.match.domain.MatchMessage;
+import com.example.demo.match.event.MatchCompletedEvent;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,27 +10,20 @@ import static jakarta.persistence.FetchType.LAZY;
 
 @Entity
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
 public class MatchRequest {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = LAZY)
     private Member requester;
 
     private String targetPhoneNumber;
-
-    /** 인스타 ID 또는 틱톡 ID */
-    private String targetSocialId;
-
-    @Enumerated(EnumType.STRING)
-    private MatchChannelType channelType;
-
+    private String targetInstagramId;
     private String targetName;
 
     private boolean matched;
@@ -45,14 +40,25 @@ public class MatchRequest {
     @Enumerated(EnumType.STRING)
     private MatchStatus status;
 
-    public void updateTargetInfo(
-            String phone,
-            String socialId,
-            String name,
-            int desire
-    ) {
+    public MatchCompletedEvent matchWith(MatchRequest other, MatchMessage message) {
+        this.matched = true;
+        this.matchedMember = other.getRequester();
+        this.matchMessage = message;
+        this.status = MatchStatus.MATCHED;
+
+        other.matched = true;
+        other.matchedMember = this.getRequester();
+        other.matchMessage = message;
+        other.status = MatchStatus.MATCHED;
+
+        return new MatchCompletedEvent(this.getRequester(), other.getRequester(), message);
+    }
+
+    // MatchRequest.java
+
+    public void updateTargetInfo(String phone, String insta, String name, int desire) {
         this.targetPhoneNumber = phone;
-        this.targetSocialId = socialId;
+        this.targetInstagramId = insta;
         this.targetName = name;
         this.requesterDesire = desire;
     }
