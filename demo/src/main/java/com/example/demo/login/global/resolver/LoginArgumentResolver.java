@@ -1,6 +1,6 @@
 package com.example.demo.login.global.resolver;
 
-import com.example.demo.login.global.annotation.Member;
+import com.example.demo.login.global.annotation.LoginMember;
 import com.example.demo.login.global.application.JwtTokenService;
 import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
 import com.example.demo.login.global.exception.exceptions.CustomException;
@@ -25,7 +25,7 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.hasParameterAnnotation(Member.class)
+        return parameter.hasParameterAnnotation(LoginMember.class)
                 && Long.class.isAssignableFrom(parameter.getParameterType());
     }
 

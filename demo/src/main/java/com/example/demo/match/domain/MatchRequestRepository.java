@@ -7,13 +7,20 @@ import java.util.Optional;
 
 public interface MatchRequestRepository extends JpaRepository<MatchRequest, Long> {
 
-    Optional<MatchRequest> findByRequester(Member requester);
-
-    Optional<MatchRequest> findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalseAndStatus(
-            String phone,
-            String insta,
-            MatchStatus status
+    Optional<MatchRequest> findByRequesterAndChannelType(
+            Member requester,
+            MatchChannelType channelType
     );
 
-    boolean existsByRequester(Member requester);
+    boolean existsByRequesterAndChannelType(
+            Member requester,
+            MatchChannelType channelType
+    );
+
+    Optional<MatchRequest> findByTargetPhoneNumberAndTargetSocialIdAndChannelTypeAndMatchedFalseAndStatus(
+            String phone,
+            String socialId,
+            MatchChannelType channelType,
+            MatchStatus status
+    );
 }

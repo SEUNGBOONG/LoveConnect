@@ -22,6 +22,8 @@ public class Post {
     private Member writer;
 
     private String title;
+
+    @Column(columnDefinition = "LONGTEXT")
     private String content;
 
     @Column(nullable = false)
