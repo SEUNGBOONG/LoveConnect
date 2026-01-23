@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   redis:
@@ -10,7 +10,7 @@ services:
       - loveconnect-net
 
   app:
-    image: leeseungyeop/loveconnect:${IMAGE_TAG}
+    image: leeseungyeop/loveconnect:latest  # 이미지 직접 사용
     container_name: loveconnect-app
     ports:
       - "8080:8080"
