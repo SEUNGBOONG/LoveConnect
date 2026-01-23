@@ -35,6 +35,9 @@ public class Member {
     @Column(nullable = false)
     private String instagramId;
 
+    @Column
+    private String tiktokId;
+
     @Column(nullable = false)
     private String mbti;
 
@@ -68,6 +71,11 @@ public class Member {
         this.phoneNumber = null;
         this.instagramId = null;
         this.memberNickName = "탈퇴한 회원";
+    }
+
+    // Member.java
+    public void updateTiktokId(String encryptedTiktokId) {
+        this.tiktokId = encryptedTiktokId;
     }
 
     public void updateProfile(String nickname, String instagramId, String mbti, Boolean emailAgree) {

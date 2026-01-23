@@ -16,6 +16,7 @@ public class AuthMapper {
                 member.getMemberNickName(),
                 AESUtil.decrypt(member.getPhoneNumber()),
                 AESUtil.decrypt(member.getInstagramId()),
+                AESUtil.decrypt(member.getTiktokId()),
                 member.getMbti(),
                 member.getGender(),
                 member.getBirthDate(),
@@ -35,6 +36,8 @@ public class AuthMapper {
                 .memberNickName(request.nickname())
                 .phoneNumber(AESUtil.encrypt(request.phoneNumber()))
                 .instagramId(AESUtil.encrypt(request.instagramId()))
+                .tiktokId(AESUtil.decrypt(request.tiktokId()))
+
                 .mbti(request.mbti())
                 .birthDate(birthDate)
                 .gender(request.gender())
