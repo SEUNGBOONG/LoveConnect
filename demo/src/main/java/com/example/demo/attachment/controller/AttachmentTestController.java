@@ -5,7 +5,7 @@ import com.example.demo.attachment.dto.request.AttachmentSubmitRequest;
 import com.example.demo.attachment.dto.response.AttachmentResultResponse;
 import com.example.demo.attachment.service.AttachmentTestService;
 import com.example.demo.common.exception.ApiResponse;
-import com.example.demo.login.global.annotation.Member;
+import com.example.demo.login.global.annotation.LoginMember;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +30,7 @@ public class AttachmentTestController {
 
     @PostMapping("/submit")
     public ResponseEntity<ApiResponse<AttachmentResultResponse>> submit(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @RequestBody AttachmentSubmitRequest request
     ) {
         return ResponseEntity.ok(
@@ -42,7 +42,7 @@ public class AttachmentTestController {
 
     @GetMapping("/result")
     public ResponseEntity<ApiResponse<List<AttachmentResultResponse>>> getResults(
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(attachmentTestService.getResultHistory(memberId))

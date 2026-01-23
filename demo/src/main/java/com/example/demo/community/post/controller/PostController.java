@@ -4,7 +4,7 @@ import com.example.demo.common.exception.ApiResponse;
 import com.example.demo.community.post.dto.request.*;
 import com.example.demo.community.post.dto.response.PostResponse;
 import com.example.demo.community.post.service.PostService;
-import com.example.demo.login.global.annotation.Member;
+import com.example.demo.login.global.annotation.LoginMember;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +22,7 @@ public class PostController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<PostResponse>> create(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @RequestBody PostCreateRequest request
     ) {
         return ResponseEntity.ok(ApiResponse.success(postService.create(memberId, request)));
@@ -30,7 +30,7 @@ public class PostController {
 
     @PutMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostResponse>> update(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long postId,
             @RequestBody PostUpdateRequest request
     ) {
@@ -39,7 +39,7 @@ public class PostController {
 
     @DeleteMapping("/{postId}")
     public ResponseEntity<ApiResponse<Void>> delete(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long postId
     ) {
         postService.delete(memberId, postId);
@@ -49,7 +49,7 @@ public class PostController {
     /** ✅ 상세조회 (isMine 포함) */
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostResponse>> get(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long postId
     ) {
         return ResponseEntity.ok(ApiResponse.success(postService.getById(memberId, postId)));
@@ -57,7 +57,7 @@ public class PostController {
 
     @GetMapping("/paged")
     public ResponseEntity<ApiResponse<Page<PostResponse>>> getAllPaged(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @PageableDefault(
                     sort = "createdAt",
                     direction = Sort.Direction.DESC
@@ -69,7 +69,7 @@ public class PostController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<PostResponse>>> search(
             @ModelAttribute PostSearchCondition condition,
-            @Member Long memberId,
+            @LoginMember Long memberId,
             Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(postService.search(condition, memberId, pageable)));

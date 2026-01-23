@@ -6,9 +6,8 @@ import com.example.demo.community.comment.dto.request.CommentUpdateRequest;
 import com.example.demo.community.comment.dto.response.CommentPageResponse;
 import com.example.demo.community.comment.dto.response.CommentResponse;
 import com.example.demo.community.comment.service.CommentService;
-import com.example.demo.login.global.annotation.Member;
+import com.example.demo.login.global.annotation.LoginMember;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +22,7 @@ public class CommentController {
     /** ✅ 댓글 작성 */
     @PostMapping
     public ResponseEntity<ApiResponse<CommentResponse>> create(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @RequestBody CommentCreateRequest request
     ) {
         return ResponseEntity
@@ -34,7 +33,7 @@ public class CommentController {
     /** ✅ 댓글 수정 */
     @PutMapping("/{commentId}")
     public ResponseEntity<ApiResponse<CommentResponse>> update(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long commentId,
             @RequestBody CommentUpdateRequest request
     ) {
@@ -46,7 +45,7 @@ public class CommentController {
     /** ✅ 댓글 삭제 */
     @DeleteMapping("/{commentId}")
     public ResponseEntity<ApiResponse<Void>> delete(
-            @Member Long memberId,
+            @LoginMember Long memberId,
             @PathVariable Long commentId
     ) {
         commentService.delete(memberId, commentId);
@@ -57,7 +56,7 @@ public class CommentController {
     public ResponseEntity<ApiResponse<CommentPageResponse>> getByPostPaged(
             @PathVariable Long postId,
             Pageable pageable,
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(

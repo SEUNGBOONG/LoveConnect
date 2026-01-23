@@ -1,7 +1,7 @@
 package com.example.demo.match.controller;
 
 import com.example.demo.common.exception.ApiResponse;
-import com.example.demo.login.global.annotation.Member;
+import com.example.demo.login.global.annotation.LoginMember;
 import com.example.demo.match.application.MatchRequestService;
 import com.example.demo.match.domain.MatchChannelType;
 import com.example.demo.match.dto.MatchRequestCommand;
@@ -30,7 +30,7 @@ public class MatchController {
     @PostMapping("/instagram/request")
     public ResponseEntity<ApiResponse<String>> instagramRequest(
             @RequestBody MatchRequestCommand command,
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         matchService.createMatchRequest(
                 memberId,
@@ -43,7 +43,7 @@ public class MatchController {
     @PutMapping("/instagram/request")
     public ResponseEntity<ApiResponse<String>> updateInstagramRequest(
             @RequestBody MatchRequestCommand command,
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         matchService.updateMatchRequest(
                 memberId,
@@ -55,7 +55,7 @@ public class MatchController {
 
     @DeleteMapping("/instagram/request")
     public ResponseEntity<ApiResponse<String>> deleteInstagramRequest(
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         matchService.deleteMatchRequest(
                 memberId,
@@ -66,7 +66,7 @@ public class MatchController {
 
     @GetMapping("/instagram/request")
     public ResponseEntity<ApiResponse<?>> getInstagramRequest(
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         MatchResponseDto dto =
                 matchService.getMatchRequest(
@@ -88,7 +88,7 @@ public class MatchController {
 
     @GetMapping("/instagram/result")
     public ResponseEntity<ApiResponse<String>> getInstagramMatchResult(
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
@@ -107,7 +107,7 @@ public class MatchController {
     @PostMapping("/tiktok/request")
     public ResponseEntity<ApiResponse<String>> tiktokRequest(
             @RequestBody MatchRequestCommand command,
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         matchService.createMatchRequest(
                 memberId,
@@ -120,7 +120,7 @@ public class MatchController {
     @PutMapping("/tiktok/request")
     public ResponseEntity<ApiResponse<String>> updateTiktokRequest(
             @RequestBody MatchRequestCommand command,
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         matchService.updateMatchRequest(
                 memberId,
@@ -132,7 +132,7 @@ public class MatchController {
 
     @DeleteMapping("/tiktok/request")
     public ResponseEntity<ApiResponse<String>> deleteTiktokRequest(
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         matchService.deleteMatchRequest(
                 memberId,
@@ -143,7 +143,7 @@ public class MatchController {
 
     @GetMapping("/tiktok/request")
     public ResponseEntity<ApiResponse<?>> getTiktokRequest(
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         MatchResponseDto dto =
                 matchService.getMatchRequest(
@@ -165,7 +165,7 @@ public class MatchController {
 
     @GetMapping("/tiktok/result")
     public ResponseEntity<ApiResponse<String>> getTiktokMatchResult(
-            @Member Long memberId
+            @LoginMember Long memberId
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(
