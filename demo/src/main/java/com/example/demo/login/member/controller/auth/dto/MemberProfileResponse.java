@@ -6,7 +6,6 @@ public record MemberProfileResponse(
         String nickname,
         String phoneNumber,
         String instagramId,
-        String tiktokId,
         String mbti,
         String gender,
         String birthDate,

@@ -1,19 +1,15 @@
 package com.example.demo.match.application;
 
 import com.example.demo.common.util.AESUtil;
-import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
-import com.example.demo.login.global.exception.exceptions.CustomException;
 import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
-import com.example.demo.match.domain.MatchChannelType;
-import com.example.demo.match.domain.MatchMessage;
-import com.example.demo.match.domain.MatchRequest;
-import com.example.demo.match.domain.MatchRequestRepository;
-import com.example.demo.match.domain.MatchStatus;
+import com.example.demo.match.domain.*;
 import com.example.demo.match.dto.MatchRequestCommand;
 import com.example.demo.match.dto.MatchResponseDto;
 import com.example.demo.match.event.MatchCompletedEvent;
 import com.example.demo.match.strategy.MatchScoreStrategy;
+import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
+import com.example.demo.login.global.exception.exceptions.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -31,76 +27,79 @@ public class MatchRequestService {
     private final MemberJpaRepository memberRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    /* ===============================
-       CREATE
-       =============================== */
-
     @Transactional
-    public void createMatchRequest(
-            Long memberId,
-            MatchRequestCommand command,
-            MatchChannelType channelType
-    ) {
+    public void createMatchRequest(Long memberId, MatchRequestCommand command) {
         Member me = getMember(memberId);
 
-        if (matchRequestRepository.existsByRequesterAndChannelType(me, channelType)) {
+        String inputPhone = command.getTargetPhone().trim();
+        String inputInsta = command.getTargetInsta().trim().toLowerCase();
+
+        String encTargetPhone = AESUtil.encrypt(inputPhone);
+        String encTargetInsta = AESUtil.encrypt(inputInsta);
+
+        String myEncPhone = me.getPhoneNumber();
+        String myEncInsta = me.getInstagramId();
+
+        if (matchRequestRepository.existsByRequester(me)) {
             throw new CustomException(CustomErrorCode.DUPLICATE_MATCH_REQUEST);
         }
-
-        String encTargetPhone =
-                AESUtil.encrypt(command.getTargetPhone().trim());
-
-        String encTargetSocial =
-                AESUtil.encrypt(command.getTargetSocialId().trim().toLowerCase());
 
         MatchRequest myRequest = MatchRequest.builder()
                 .requester(me)
                 .targetName(command.getTargetName())
+                .targetInstagramId(encTargetInsta)
                 .targetPhoneNumber(encTargetPhone)
-                .targetSocialId(encTargetSocial)
-                .channelType(channelType)
                 .requesterDesire(command.getRequesterDesire())
-                .matched(false)
                 .status(MatchStatus.PENDING)
+                .matched(false)
                 .build();
 
         matchRequestRepository.save(myRequest);
-
-        String myPhone = me.getPhoneNumber();
-        String mySocialId = me.getSocialIdByChannel(channelType);
+        log.info("📩 [내 요청 저장 완료] → {}", me.getMemberName());
 
         Optional<MatchRequest> reverseOpt =
-                matchRequestRepository
-                        .findByTargetPhoneNumberAndTargetSocialIdAndChannelTypeAndMatchedFalseAndStatus(
-                                myPhone,
-                                mySocialId,
-                                channelType,
-                                MatchStatus.PENDING
-                        );
+                matchRequestRepository.findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalseAndStatus(
+                        myEncPhone, myEncInsta, MatchStatus.PENDING);
 
-        reverseOpt.ifPresent(matchRequest -> match(matchRequest, myRequest, me));
+        if (reverseOpt.isPresent()) {
+            MatchRequest reverseReq = reverseOpt.get();
+            Member opponent = reverseReq.getRequester();
+
+            int myDesire = myRequest.getRequesterDesire();
+            int yourDesire = reverseReq.getRequesterDesire();
+
+            MatchMessage message = MatchScoreStrategy.calculate(myDesire, yourDesire);
+
+            reverseReq.setMatched(true);
+            reverseReq.setMatchedMember(me);
+            reverseReq.setMatchMessage(message);
+            reverseReq.setTargetDesire(myDesire);
+            reverseReq.setStatus(MatchStatus.MATCHED);
+
+            myRequest.setMatched(true);
+            myRequest.setMatchedMember(opponent);
+            myRequest.setMatchMessage(message);
+            myRequest.setTargetDesire(yourDesire);
+            myRequest.setStatus(MatchStatus.MATCHED);
+
+            matchRequestRepository.save(reverseReq);
+            matchRequestRepository.save(myRequest);
+
+            log.info("🎯 [쌍방 매칭 성공] {} ❤️ {}", me.getMemberName(), opponent.getMemberName());
+            eventPublisher.publishEvent(new MatchCompletedEvent(me, opponent, message));
+        } else {
+            log.info("⌛ [상대 요청 없음] → 대기 상태 유지");
+        }
     }
 
-    /* ===============================
-       GET
-       =============================== */
-
     @Transactional(readOnly = true)
-    public MatchResponseDto getMatchRequest(
-            Long memberId,
-            MatchChannelType channelType
-    ) {
+    public MatchResponseDto getMatchRequest(Long memberId) {
         Member requester = getMember(memberId);
 
-        return matchRequestRepository
-                .findByRequesterAndChannelType(requester, channelType)
+        return matchRequestRepository.findByRequester(requester)
                 .map(request -> MatchResponseDto.builder()
-                        .targetPhone(
-                                AESUtil.decrypt(request.getTargetPhoneNumber())
-                        )
-                        .targetSocialId(
-                                AESUtil.decrypt(request.getTargetSocialId())
-                        )
+                        .targetPhone(AESUtil.decrypt(request.getTargetPhoneNumber()))
+                        .targetInsta(AESUtil.decrypt(request.getTargetInstagramId()))
                         .targetName(request.getTargetName())
                         .requesterDesire(request.getRequesterDesire())
                         .matched(request.isMatched())
@@ -114,108 +113,44 @@ public class MatchRequestService {
                 .orElse(null);
     }
 
-    /* ===============================
-       UPDATE
-       =============================== */
-
     @Transactional
-    public void updateMatchRequest(
-            Long memberId,
-            MatchRequestCommand command,
-            MatchChannelType channelType
-    ) {
+    public void updateMatchRequest(Long memberId, MatchRequestCommand command) {
         Member requester = getMember(memberId);
-
-        MatchRequest request =
-                matchRequestRepository
-                        .findByRequesterAndChannelType(requester, channelType)
-                        .orElseThrow(() ->
-                                new CustomException(CustomErrorCode.MATCH_NOT_FOUND)
-                        );
+        MatchRequest request = matchRequestRepository.findByRequester(requester)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
         if (request.isMatched()) {
             throw new CustomException(CustomErrorCode.MATCH_ALREADY_COMPLETED);
         }
 
+        String phone = command.getTargetPhone().trim();
+        String insta = command.getTargetInsta().trim().toLowerCase();
+
         request.updateTargetInfo(
-                AESUtil.encrypt(command.getTargetPhone().trim()),
-                AESUtil.encrypt(command.getTargetSocialId().trim().toLowerCase()),
+                AESUtil.encrypt(phone),
+                AESUtil.encrypt(insta),
                 command.getTargetName(),
                 command.getRequesterDesire()
         );
     }
 
-    /* ===============================
-       DELETE
-       =============================== */
-
+    /**
+     * ✅ 매칭 상태와 관계없이 삭제 허용
+     */
     @Transactional
-    public void deleteMatchRequest(
-            Long memberId,
-            MatchChannelType channelType
-    ) {
+    public void deleteMatchRequest(Long memberId) {
         Member requester = getMember(memberId);
-
-        MatchRequest request =
-                matchRequestRepository
-                        .findByRequesterAndChannelType(requester, channelType)
-                        .orElseThrow(() ->
-                                new CustomException(CustomErrorCode.MATCH_NOT_FOUND)
-                        );
+        MatchRequest request = matchRequestRepository.findByRequester(requester)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
         matchRequestRepository.delete(request);
     }
 
-    /* ===============================
-       MATCH LOGIC
-       =============================== */
-
-    private void match(
-            MatchRequest reverseReq,
-            MatchRequest myRequest,
-            Member me
-    ) {
-        Member opponent = reverseReq.getRequester();
-
-        int myDesire = myRequest.getRequesterDesire();
-        int yourDesire = reverseReq.getRequesterDesire();
-
-        MatchMessage message =
-                MatchScoreStrategy.calculate(myDesire, yourDesire);
-
-        reverseReq.setMatched(true);
-        reverseReq.setMatchedMember(me);
-        reverseReq.setTargetDesire(myDesire);
-        reverseReq.setMatchMessage(message);
-        reverseReq.setStatus(MatchStatus.MATCHED);
-
-        myRequest.setMatched(true);
-        myRequest.setMatchedMember(opponent);
-        myRequest.setTargetDesire(yourDesire);
-        myRequest.setMatchMessage(message);
-        myRequest.setStatus(MatchStatus.MATCHED);
-
-        matchRequestRepository.save(reverseReq);
-        matchRequestRepository.save(myRequest);
-
-        eventPublisher.publishEvent(
-                new MatchCompletedEvent(me, opponent, message)
-        );
-    }
-
     @Transactional(readOnly = true)
-    public String checkMatchResult(
-            Long memberId,
-            MatchChannelType channelType
-    ) {
+    public String checkMatchResult(Long memberId) {
         Member requester = getMember(memberId);
-
-        MatchRequest request =
-                matchRequestRepository
-                        .findByRequesterAndChannelType(requester, channelType)
-                        .orElseThrow(() ->
-                                new CustomException(CustomErrorCode.MATCH_NOT_FOUND)
-                        );
+        MatchRequest request = matchRequestRepository.findByRequester(requester)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
         if (!request.isMatched()) {
             throw new CustomException(CustomErrorCode.MATCH_RESULT_PENDING);
@@ -226,10 +161,6 @@ public class MatchRequestService {
 
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId)
-                .orElseThrow(
-                        () -> new CustomException(
-                                CustomErrorCode.MATCH_MEMBER_NOT_FOUND
-                        )
-                );
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
     }
 }

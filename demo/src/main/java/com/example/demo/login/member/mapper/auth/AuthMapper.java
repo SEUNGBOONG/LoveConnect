@@ -16,7 +16,6 @@ public class AuthMapper {
                 member.getMemberNickName(),
                 AESUtil.decrypt(member.getPhoneNumber()),
                 AESUtil.decrypt(member.getInstagramId()),
-                AESUtil.decrypt(member.getTiktokId()),
                 member.getMbti(),
                 member.getGender(),
                 member.getBirthDate(),
@@ -24,14 +23,10 @@ public class AuthMapper {
         );
     }
 
-    public static Member toNormalMember(
-            NormalSignUpRequest request,
-            String encodedPassword
-    ) {
-        String birthDate =
-                request.birthYear().substring(2) +
-                        String.format("%02d", Integer.parseInt(request.birthMonth())) +
-                        String.format("%02d", Integer.parseInt(request.birthDay()));
+    public static Member toNormalMember(NormalSignUpRequest request, String encodedPassword) {
+        String birthDate = request.birthYear().substring(2) +
+                String.format("%02d", Integer.parseInt(request.birthMonth())) +
+                String.format("%02d", Integer.parseInt(request.birthDay()));
 
         return Member.builder()
                 .memberEmail(request.email())
@@ -39,16 +34,7 @@ public class AuthMapper {
                 .memberPassword(encodedPassword)
                 .memberNickName(request.nickname())
                 .phoneNumber(AESUtil.encrypt(request.phoneNumber()))
-                .instagramId(
-                        request.instagramId() != null
-                                ? AESUtil.encrypt(request.instagramId().trim().toLowerCase())
-                                : null
-                )
-                .tiktokId(
-                        request.tiktokId() != null
-                                ? AESUtil.encrypt(request.tiktokId().trim().toLowerCase())
-                                : null
-                )
+                .instagramId(AESUtil.encrypt(request.instagramId()))
                 .mbti(request.mbti())
                 .birthDate(birthDate)
                 .gender(request.gender())

@@ -3,7 +3,7 @@ package com.example.demo.breakup.controller;
 import com.example.demo.breakup.dto.BreakupReasonRequest;
 import com.example.demo.breakup.service.BreakupReasonService;
 import com.example.demo.common.exception.ApiResponse;
-import com.example.demo.login.global.annotation.LoginMember;
+import com.example.demo.login.global.annotation.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +20,7 @@ public class BreakupReasonController {
 
     @PostMapping("/reason")
     public ResponseEntity<ApiResponse<String>> submitBreakupReason(
-            @LoginMember Long memberId,
+            @Member Long memberId,
             @RequestBody BreakupReasonRequest request
     ) {
         breakupReasonService.saveReason(memberId, request);
