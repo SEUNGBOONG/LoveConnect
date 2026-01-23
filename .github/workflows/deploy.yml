@@ -1,7 +1,7 @@
 name: Deploy to EC2 With Docker Image
 
 on:
-  workflow_dispatch:  # 수동 실행
+  workflow_dispatch:  # 👉 Actions에서 버튼 눌러 수동 실행
 
 jobs:
   build-and-push:
@@ -22,13 +22,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 🔥 핵심: 커밋 SHA + latest 둘 다 푸시
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: ./demo
           file: ./demo/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
 
       - name: Upload docker-compose.yml
         uses: actions/upload-artifact@v4
@@ -65,9 +68,11 @@ jobs:
           script: |
             cd ~/demo
 
-            echo "${{ secrets.PROPERTIES }}" > ./src/main/resources/application.properties
+            # 🔥 지금 배포되는 정확한 이미지 태그
+            export IMAGE_TAG=${{ github.sha }}
 
             docker-compose down
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
-            docker-compose up -d --build
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:${IMAGE_TAG}
+            docker-compose up -d
+
             docker image prune -a -f
