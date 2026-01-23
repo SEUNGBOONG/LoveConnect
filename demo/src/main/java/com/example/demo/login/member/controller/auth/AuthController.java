@@ -56,4 +56,15 @@ public class AuthController {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
+
+    @GetMapping("/auth/me")
+    public ResponseEntity<ApiResponse<?>> me(@com.example.demo.login.global.annotation.Member Long memberId) {
+        Member member = authService.getById(memberId);
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        AuthMapper.toMemberProfileResponse(member)
+                )
+        );
+    }
+
 }

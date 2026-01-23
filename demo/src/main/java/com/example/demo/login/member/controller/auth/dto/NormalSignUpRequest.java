@@ -7,6 +7,7 @@ public record NormalSignUpRequest(
         String nickname,
         String phoneNumber,
         String instagramId,
+        String tiktokId,
         String mbti,
         String birthYear,
         String birthMonth,

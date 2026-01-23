@@ -42,7 +42,22 @@ public enum CustomErrorCode {
     NOT_SAME_PASSWORD(HttpStatus.UNAUTHORIZED, "AUTH_003", "비밀번호가 일치하지 않습니다."),
     PHONE_AUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "AUTH_004", "전화번호 인증이 필요합니다."),
     MEMBER_WITHDRAWN(HttpStatus.UNAUTHORIZED, "MEMBER_002", "탈퇴한 회원입니다."),
-    NOT_FOUND(HttpStatus.NOT_FOUND,"QUESTION_001" , "찾을 수가 없습니다.");
+    NOT_FOUND(HttpStatus.NOT_FOUND,"QUESTION_001" , "찾을 수가 없습니다."),
+    ALREADY_REGISTERED(
+            HttpStatus.CONFLICT,
+            "PROFILE_001",
+            "이미 등록된 정보입니다."
+    ),
+    TIKTOK_ID_REQUIRED(
+            HttpStatus.BAD_REQUEST,
+            "MATCH_008",
+            "틱톡 아이디 등록이 필요합니다."
+    ),
+    TARGET_TIKTOK_REQUIRED(
+            HttpStatus.BAD_REQUEST,
+            "MATCH_009",
+            "상대방 틱톡 아이디를 입력해주세요."
+    );
 
     private final HttpStatus httpStatus;
     private final String customCode;
