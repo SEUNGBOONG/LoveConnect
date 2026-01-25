@@ -31,7 +31,7 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
 
-        // ✅ permitAll 경로는 필터에서 아예 인증 로직을 타지 않는다
+        // ✅ permitAll 경로는 필터에서 완전히 스킵
         if (isPermitAllPath(uri)) {
             filterChain.doFilter(request, response);
             return;
@@ -68,7 +68,6 @@ public class JwtCookieFilter extends OncePerRequestFilter {
     }
 
     private boolean isPermitAllPath(String uri) {
-        // 🔥 인증 없이 접근 가능한 경로들 추가
         return uri.equals("/login")
                 || uri.equals("/logout")
                 || uri.equals("/reset-password")
