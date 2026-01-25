@@ -24,17 +24,16 @@ public class SameSiteCookieFilter implements Filter {
                 @Override
                 public void addCookie(Cookie cookie) {
                     StringBuilder sb = new StringBuilder();
-                    sb.append(cookie.getName()).append("=").append(cookie.getValue()).append("; Path=")
-                            .append(cookie.getPath() == null ? "/" : cookie.getPath());
+                    sb.append(cookie.getName()).append("=").append(cookie.getValue())
+                            .append("; Path=").append(cookie.getPath() == null ? "/" : cookie.getPath());
 
-                    if (cookie.getMaxAge() > 0) {
+                    if (cookie.getMaxAge() >= 0) {
                         sb.append("; Max-Age=").append(cookie.getMaxAge());
                     }
 
-                    if (cookie.getSecure()) sb.append("; Secure");
+                    sb.append("; Secure");     // 🔥 강제
                     if (cookie.isHttpOnly()) sb.append("; HttpOnly");
 
-                    // 여기 추가됨!
                     sb.append("; SameSite=None");
 
                     if (cookie.getDomain() != null) {

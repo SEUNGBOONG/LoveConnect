@@ -24,12 +24,14 @@ public class JwtCookieFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
         String uri = request.getRequestURI();
 
-        // 🔥 인증 없이 접근 가능한 경로 → 필터 건너뛰기
+        // ✅ permitAll 경로는 필터에서 아예 인증 로직을 타지 않는다
         if (isPermitAllPath(uri)) {
             filterChain.doFilter(request, response);
             return;
@@ -37,23 +39,18 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromCookie(request);
 
-        if (token == null || token.isBlank()) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        if (token != null && !token.isBlank()) {
+            try {
+                DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
+                Long memberId = jwt.getClaim("memberId").asLong();
 
-        try {
-            DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
-            Long memberId = jwt.getClaim("memberId").asLong();
+                Authentication authentication =
+                        new UsernamePasswordAuthenticationToken(memberId, null, List.of());
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    memberId, null, List.of()
-            );
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (Exception e) {
-            // ❌ 유효하지 않은 토큰이더라도 인증 실패만 하고 통과
-            System.out.println("❌ Invalid JWT: " + e.getMessage());
-            SecurityContextHolder.clearContext();
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (Exception e) {
+                SecurityContextHolder.clearContext();
+            }
         }
 
         filterChain.doFilter(request, response);
