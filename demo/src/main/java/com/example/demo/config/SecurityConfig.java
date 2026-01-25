@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final SameSiteCookieFilter sameSiteCookieFilter;
     private final CorsConfig corsConfig;
 
     @Bean
@@ -23,44 +24,32 @@ public class SecurityConfig {
                 .logout(logout -> logout.disable())
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
 
+                // 🔥 필터 순서 보장
+                .addFilterBefore(sameSiteCookieFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        new JwtCookieFilter(jwtTokenProvider),
+                        UsernamePasswordAuthenticationFilter.class
+                )
+
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ OPTIONS 요청 허용 (CORS preflight)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ 인증 없이 접근 가능한 API
-                        .requestMatchers(HttpMethod.POST, "/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/logout").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/reset-password").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/normalMembers").permitAll()
+                        // 인증 없이 허용
+                        .requestMatchers("/login", "/logout", "/reset-password").permitAll()
+                        .requestMatchers("/normalMembers").permitAll()
                         .requestMatchers("/phone/**").permitAll()
 
-                        // ✅ Swagger
+                        // Swagger
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-resources/**").permitAll()
                         .requestMatchers("/webjars/**").permitAll()
 
-                        // 🔥 게시글 조회는 로그인 없이 허용
+                        // 게시글 조회는 공개
                         .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
 
-                        // 🔥 게시글 작성/수정/삭제는 로그인 필요
-                        .requestMatchers(HttpMethod.POST, "/posts/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/posts/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/posts/**").authenticated()
-
-                        // ✅ 그 외 인증 필요한 API
-                        .requestMatchers("/profile/**").authenticated()
-                        .requestMatchers("/matches/**").authenticated()
-                        .requestMatchers("/comments/**").authenticated()
-
-                        // ✅ 나머지는 모두 인증 필요
+                        // 나머지는 인증 필요
                         .anyRequest().authenticated()
-                )
-
-                // ✅ JWT 쿠키 필터
-                .addFilterBefore(
-                        new JwtCookieFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class
                 );
 
         return http.build();
