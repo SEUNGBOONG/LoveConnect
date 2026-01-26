@@ -114,6 +114,25 @@ public class AuthService {
         phoneAuthService.clearVerified(request.phoneNumber());
     }
 
+    @Transactional
+    public void registerTiktokId(Long memberId, String rawTiktokId) {
+
+        if (rawTiktokId == null || rawTiktokId.isBlank()) {
+            throw new CustomException(CustomErrorCode.INVALID_TIKTOK_ID);
+        }
+
+        Member member = memberJpaRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
+
+        if (member.getTiktokId() != null) {
+            throw new CustomException(CustomErrorCode.ALREADY_REGISTERED);
+        }
+
+        member.updateTiktokId(
+                AESUtil.encrypt(rawTiktokId.trim().toLowerCase())
+        );
+    }
+
     public String generateToken(Long memberId) {
         return jwtTokenProvider.createToken(memberId);
     }

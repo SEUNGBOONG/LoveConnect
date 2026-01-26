@@ -57,8 +57,12 @@ public enum CustomErrorCode {
             HttpStatus.BAD_REQUEST,
             "MATCH_009",
             "상대방 틱톡 아이디를 입력해주세요."
+    ),
+    INVALID_TIKTOK_ID(
+            HttpStatus.BAD_REQUEST,
+            "MATCH_010",
+            "유효하지 않은 틱톡 아이디입니다."
     );
-
     private final HttpStatus httpStatus;
     private final String customCode;
     private final String message;
