@@ -78,10 +78,11 @@ public class Member {
         this.tiktokId = encryptedTiktokId;
     }
 
-    public void updateProfile(String nickname, String instagramId, String mbti, Boolean emailAgree) {
+    public void updateProfile(String nickname, String instagramId, String tiktokId, String mbti, Boolean emailAgree) {
         this.memberNickName = nickname;
         this.instagramId = AESUtil.encrypt(instagramId);
         this.mbti = mbti;
+        this.tiktokId = AESUtil.encrypt(tiktokId);
         this.emailAgree = emailAgree;
     }
 

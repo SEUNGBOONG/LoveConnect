@@ -7,7 +7,7 @@ public class DecryptionRunner {
     public static void main(String[] args) {
 
         // 1. 첫 번째 데이터 복호화
-        String encodedString1 = "SNPoAosn47gHb0WlzYM1qw==";
+        String encodedString1 = "1jq6KWWWHF1Ku33J9fVobA==";
         // AESUtil 클래스의 static 메서드인 decrypt를 호출합니다.
         String decrypted1 = AESUtil.decrypt(encodedString1);
 

@@ -89,6 +89,7 @@ public class AuthService {
                 request.nickname(),
                 request.instagramId(),
                 request.mbti(),
+                request.titokId(),
                 request.emailAgree()
         );
     }

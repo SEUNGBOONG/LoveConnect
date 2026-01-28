@@ -50,6 +50,7 @@ public class JwtCookieFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
+                throw e;
             }
         }
 
