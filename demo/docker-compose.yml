@@ -10,7 +10,7 @@ services:
       - loveconnect-net
 
   app:
-    image: leeseungyeop/loveconnect:latest
+    image: ${DOCKERHUB_USERNAME}/loveconnect:latest
     container_name: loveconnect-app
     ports:
       - "8080:8080"
@@ -18,11 +18,17 @@ services:
       - redis
     networks:
       - loveconnect-net
-    # === 이 아래 environment 부분을 추가/수정하세요 ===
+    # === 외부 파일을 컨테이너 안으로 연결 ===
+    volumes:
+      - ./src/main/resources:/app/resources
     environment:
       - SPRING_PROFILES_ACTIVE=default
-      - TOSS_CERT_PATH=classpath:toss-cert.p12
+      # 파일을 직접 참조하도록 경로 수정
+      - TOSS_CERT_PATH=file:/app/resources/toss-cert.p12
       - TOSS_CERT_PASSWORD=199310
       - TOSS_DECRYPT_KEY=JH1l/ziZ8/f50lfmgitC0fMHgdiqh6UZ65hjTrR7Kds=
       - TOSS_DECRYPT_AAD=TOSS
       - TOSS_API_BASE_URL=https://apps-in-toss-api.toss.im
+
+networks:
+  loveconnect-net:
