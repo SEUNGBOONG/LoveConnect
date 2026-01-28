@@ -61,6 +61,9 @@ dependencies {
 	testImplementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter-test:2.3.1'
 	implementation 'com.squareup.okhttp3:okhttp:4.10.0'
 	implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.0'
+
+// Spring Boot 3.x 기준 Apache HttpClient 5 사용
+	implementation 'org.apache.httpcomponents.client5:httpclient5'
 }
 tasks.named('test') {
 	useJUnitPlatform()

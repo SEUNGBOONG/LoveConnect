@@ -32,13 +32,13 @@ public class Member {
     @Column(nullable = false)
     private String phoneNumber;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String instagramId;
 
     @Column
     private String tiktokId;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String mbti;
 
     @Column(nullable = false)

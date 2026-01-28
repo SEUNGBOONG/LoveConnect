@@ -1,5 +1,7 @@
-package com.example.demo.config;
+package com.example.demo.config.infra;
 
+import com.example.demo.config.jwt.SameSiteCookieFilter;
+import com.example.demo.config.jwt.JwtCookieFilter;
 import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -34,8 +36,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 인증 없이 허용
+                        // ✅ 인증 없이 허용 (토스 로그인 경로 추가)
                         .requestMatchers("/login", "/logout", "/reset-password").permitAll()
+                        .requestMatchers("/api/v1/toss/login").permitAll()
                         .requestMatchers("/normalMembers").permitAll()
                         .requestMatchers("/phone/**").permitAll()
 
@@ -48,7 +51,7 @@ public class SecurityConfig {
                         // 게시글 조회는 공개
                         .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
 
-                        // 나머지는 인증 필요
+                        // 나머지는 인증 필요 (추가 정보 입력 PATCH 등은 여기서 걸러짐)
                         .anyRequest().authenticated()
                 );
 
