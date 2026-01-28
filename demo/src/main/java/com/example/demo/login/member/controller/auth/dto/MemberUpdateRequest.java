@@ -4,5 +4,6 @@ public record MemberUpdateRequest(
         String nickname,
         String instagramId,
         String mbti,
+        String titokId,
         Boolean emailAgree
 ) { }

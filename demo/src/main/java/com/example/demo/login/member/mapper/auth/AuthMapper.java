@@ -60,7 +60,8 @@ public class AuthMapper {
         return new LoginResponse(
                 member.getId(),
                 member.getMemberName(),
-                member.getMemberNickName()
+                member.getMemberNickName(),
+                member.getTiktokId()
         );
     }
 }
