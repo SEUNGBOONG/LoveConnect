@@ -61,7 +61,7 @@ public class AuthMapper {
                 member.getId(),
                 member.getMemberName(),
                 member.getMemberNickName(),
-                member.getTiktokId()
+                AESUtil.decrypt(member.getTiktokId())
         );
     }
 }
