@@ -10,7 +10,7 @@ services:
       - loveconnect-net
 
   app:
-    image: leeseungyeop/loveconnect:latest  # 이미지 직접 사용
+    image: leeseungyeop/loveconnect:latest
     container_name: loveconnect-app
     ports:
       - "8080:8080"
@@ -18,6 +18,11 @@ services:
       - redis
     networks:
       - loveconnect-net
-
-networks:
-  loveconnect-net:
+    # === 이 아래 environment 부분을 추가/수정하세요 ===
+    environment:
+      - SPRING_PROFILES_ACTIVE=default
+      - TOSS_CERT_PATH=classpath:toss-cert.p12
+      - TOSS_CERT_PASSWORD=199310
+      - TOSS_DECRYPT_KEY=JH1l/ziZ8/f50lfmgitC0fMHgdiqh6UZ65hjTrR7Kds=
+      - TOSS_DECRYPT_AAD=TOSS
+      - TOSS_API_BASE_URL=https://apps-in-toss-api.toss.im
