@@ -11,17 +11,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create application.properties
+      # 1. 설정 파일 및 토스 인증서 파일 복원
+      - name: Create Resources and Config Files
         run: |
           mkdir -p ./demo/src/main/resources
+          # application.properties 생성
           echo "${{ secrets.PROPERTIES }}" > ./demo/src/main/resources/application.properties
+          # 토스 mTLS 인증서(.p12) 파일 생성
+          echo "${{ secrets.TOSS_CERT_BASE64 }}" | base64 --decode > ./demo/src/main/resources/toss-cert.p12
 
+      # 2. Docker Hub 로그인
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # 3. Docker 이미지 빌드 및 푸시
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -30,10 +36,11 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
 
+      # 4. docker-compose.yml 파일 업로드 준비
       - name: Upload docker-compose.yml
         uses: actions/upload-artifact@v4
         with:
-          name: docker-compose.yml
+          name: docker-compose-file
           path: ./demo/docker-compose.yml
 
   deploy:
@@ -44,7 +51,7 @@ jobs:
       - name: Download docker-compose.yml
         uses: actions/download-artifact@v4
         with:
-          name: docker-compose.yml
+          name: docker-compose-file
           path: ./
 
       - name: Upload docker-compose.yml to EC2
@@ -64,7 +71,8 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
             cd ~/demo
-
+            # EC2 내부 디렉토리 생성 및 설정파일 유지
+            mkdir -p src/main/resources
             echo "${{ secrets.PROPERTIES }}" > ./src/main/resources/application.properties
 
             docker-compose down

@@ -1,4 +1,4 @@
-package com.example.demo.config;
+package com.example.demo.config.jwt;
 
 import com.example.demo.login.global.resolver.LoginArgumentResolver;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.example.demo.config;
+package com.example.demo.config.jwt;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
@@ -39,6 +39,14 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromCookie(request);
 
+        // 헤더에서도 토큰을 찾을 수 있도록 보완 (선택사항이나 권장)
+        if (token == null) {
+            String bearerToken = request.getHeader("Authorization");
+            if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+                token = bearerToken.substring(7);
+            }
+        }
+
         if (token != null && !token.isBlank()) {
             try {
                 DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
@@ -50,7 +58,8 @@ public class JwtCookieFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
-                throw e;
+                // 인증이 필요한 경로인데 토큰이 잘못된 경우 에러를 던지거나 그대로 진행
+                // 여기서는 시큐리티가 처리하도록 filterChain으로 넘깁니다.
             }
         }
 
@@ -70,6 +79,7 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
     private boolean isPermitAllPath(String uri) {
         return uri.equals("/login")
+                || uri.equals("/api/v1/toss/login") // ✅ 토스 로그인 경로 추가
                 || uri.equals("/logout")
                 || uri.equals("/reset-password")
                 || uri.equals("/normalMembers")
