@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -26,7 +28,12 @@ public class SecurityConfig {
                 .logout(logout -> logout.disable())
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
 
-                // 🔥 필터 순서 보장
+                // 🔥 핵심: JWT 기반 → 세션 완전 비활성화
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(STATELESS)
+                )
+
+                // 🔥 필터 순서
                 .addFilterBefore(sameSiteCookieFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(
                         new JwtCookieFilter(jwtTokenProvider),
@@ -36,7 +43,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ✅ 인증 없이 허용 (토스 로그인 경로 추가)
+                        // 인증 없이 허용
                         .requestMatchers("/login", "/logout", "/reset-password").permitAll()
                         .requestMatchers("/api/v1/toss/login").permitAll()
                         .requestMatchers("/normalMembers").permitAll()
@@ -48,10 +55,6 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-resources/**").permitAll()
                         .requestMatchers("/webjars/**").permitAll()
 
-                        // 게시글 조회는 공개
-                        .requestMatchers(HttpMethod.GET, "/posts/**").permitAll()
-
-                        // 나머지는 인증 필요 (추가 정보 입력 PATCH 등은 여기서 걸러짐)
                         .anyRequest().authenticated()
                 );
 
