@@ -19,6 +19,7 @@ import java.util.Map;
 public class TossAuthController {
 
     private final TossAuthService tossAuthService;
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> request) {
         try {

@@ -125,6 +125,7 @@ public class AuthService {
         Member member = memberJpaRepository.findById(memberId)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
 
+        // 이미 등록된 경우 차단
         if (member.getTiktokId() != null) {
             throw new CustomException(CustomErrorCode.ALREADY_REGISTERED);
         }

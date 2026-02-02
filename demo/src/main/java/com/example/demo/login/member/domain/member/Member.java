@@ -78,12 +78,35 @@ public class Member {
         this.tiktokId = encryptedTiktokId;
     }
 
-    public void updateProfile(String nickname, String instagramId, String tiktokId, String mbti, Boolean emailAgree) {
+    public void updateProfile(
+            String nickname,
+            String instagramId,
+            String tiktokId,
+            String mbti,
+            Boolean emailAgree
+    ) {
         this.memberNickName = nickname;
-        this.instagramId = AESUtil.encrypt(instagramId);
-        this.mbti = mbti;
-        this.tiktokId = AESUtil.encrypt(tiktokId);
-        this.emailAgree = emailAgree;
+
+        if (instagramId != null) {
+            this.instagramId = AESUtil.encrypt(instagramId);
+        }
+
+        if (mbti != null) {
+            this.mbti = mbti;
+        }
+
+        // 🔥 핵심
+        if (tiktokId != null) {
+            if (tiktokId.isBlank()) {
+                this.tiktokId = null; // ← "삭제" 혹은 "미등록"
+            } else {
+                this.tiktokId = AESUtil.encrypt(tiktokId.trim().toLowerCase());
+            }
+        }
+
+        if (emailAgree != null) {
+            this.emailAgree = emailAgree;
+        }
     }
 
     public void changePassword(String newEncodedPassword) {

@@ -16,7 +16,7 @@ public class AuthMapper {
                 member.getMemberNickName(),
                 AESUtil.decrypt(member.getPhoneNumber()),
                 AESUtil.decrypt(member.getInstagramId()),
-                AESUtil.decrypt(member.getTiktokId()),
+                AESUtil.decrypt(member.getTiktokId()), // null이면 null 반환
                 member.getMbti(),
                 member.getGender(),
                 member.getBirthDate(),
@@ -25,9 +25,9 @@ public class AuthMapper {
     }
 
     public static Member toNormalMember(NormalSignUpRequest request, String encodedPassword) {
-        String birthDate = request.birthYear().substring(2) +
-                String.format("%02d", Integer.parseInt(request.birthMonth())) +
-                String.format("%02d", Integer.parseInt(request.birthDay()));
+        String birthDate = request.birthYear().substring(2)
+                + String.format("%02d", Integer.parseInt(request.birthMonth()))
+                + String.format("%02d", Integer.parseInt(request.birthDay()));
 
         return Member.builder()
                 .memberEmail(request.email())
@@ -35,8 +35,18 @@ public class AuthMapper {
                 .memberPassword(encodedPassword)
                 .memberNickName(request.nickname())
                 .phoneNumber(AESUtil.encrypt(request.phoneNumber()))
-                .instagramId(AESUtil.encrypt(request.instagramId()))
-                .tiktokId(AESUtil.decrypt(request.tiktokId()))
+
+                // ✅ null 허용 + 있을 때만 암호화
+                .instagramId(
+                        request.instagramId() == null
+                                ? null
+                                : AESUtil.encrypt(request.instagramId())
+                )
+                .tiktokId(
+                        request.tiktokId() == null
+                                ? null
+                                : AESUtil.encrypt(request.tiktokId().trim().toLowerCase())
+                )
 
                 .mbti(request.mbti())
                 .birthDate(birthDate)
@@ -61,7 +71,7 @@ public class AuthMapper {
                 member.getId(),
                 member.getMemberName(),
                 member.getMemberNickName(),
-                AESUtil.decrypt(member.getTiktokId())
+                AESUtil.decrypt(member.getTiktokId()) // null-safe
         );
     }
 }
