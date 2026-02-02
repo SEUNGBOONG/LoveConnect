@@ -85,7 +85,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @GetMapping("/auth/me")
+    @GetMapping("/me")
     public ResponseEntity<ApiResponse<?>> me(@com.example.demo.login.global.annotation.Member Long memberId) {
         Member member = authService.getById(memberId);
         return ResponseEntity.ok(
