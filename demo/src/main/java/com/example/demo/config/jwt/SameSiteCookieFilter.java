@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-
 @Component
 public class SameSiteCookieFilter implements Filter {
 
@@ -31,10 +30,17 @@ public class SameSiteCookieFilter implements Filter {
                         sb.append("; Max-Age=").append(cookie.getMaxAge());
                     }
 
-                    sb.append("; Secure");     // 🔥 강제
-                    if (cookie.isHttpOnly()) sb.append("; HttpOnly");
+                    // 🔥 여기 분기
+                    boolean isLocal =
+                            request.getServerName().equals("localhost")
+                                    || request.getServerName().equals("127.0.0.1");
 
-                    sb.append("; SameSite=None");
+                    if (!isLocal) {
+                        sb.append("; Secure");
+                        sb.append("; SameSite=None");
+                    }
+
+                    if (cookie.isHttpOnly()) sb.append("; HttpOnly");
 
                     if (cookie.getDomain() != null) {
                         sb.append("; Domain=").append(cookie.getDomain());

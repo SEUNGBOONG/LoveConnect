@@ -8,11 +8,16 @@ import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.member.service.auth.AuthService;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping
@@ -23,7 +28,11 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @RequestBody LoginRequest loginRequest,
+            HttpServletResponse response,
+            HttpServletRequest request
+    ) {
         Member member = authService.loginAndReturnMember(loginRequest);
         String token = authService.generateToken(member.getId());
 
@@ -31,8 +40,16 @@ public class AuthController {
         jwtCookie.setHttpOnly(true);
         jwtCookie.setPath("/");
         jwtCookie.setMaxAge(60 * 60);
-        jwtCookie.setSecure(true);
-        jwtCookie.setDomain(".lovereconnect.co.kr");
+
+        boolean isLocal =
+                request.getServerName().equals("localhost")
+                        || request.getServerName().equals("127.0.0.1");
+
+        if (!isLocal) {
+            jwtCookie.setSecure(true);
+            jwtCookie.setDomain(".lovereconnect.co.kr");
+        }
+
         response.addCookie(jwtCookie);
 
         LoginResponse loginResponse = AuthMapper.toLoginResponse(member);
@@ -40,12 +57,23 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<String>> logout(
+            HttpServletResponse response,
+            HttpServletRequest request
+    ) {
         Cookie deleteCookie = new Cookie("token", null);
-        deleteCookie.setDomain(".lovereconnect.co.kr");
         deleteCookie.setPath("/");
         deleteCookie.setMaxAge(0);
-        deleteCookie.setSecure(true);
+
+        boolean isLocal =
+                request.getServerName().equals("localhost")
+                        || request.getServerName().equals("127.0.0.1");
+
+        if (!isLocal) {
+            deleteCookie.setSecure(true);
+            deleteCookie.setDomain(".lovereconnect.co.kr");
+        }
+
         response.addCookie(deleteCookie);
 
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
