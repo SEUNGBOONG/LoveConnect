@@ -88,7 +88,7 @@ public class AuthService {
         member.updateProfile(
                 request.nickname(),
                 request.instagramId(),
-                request.titokId(),  // ✅ 3번째: tiktok
+                request.tiktokId(),  // ✅ 3번째: tiktok
                 request.mbti(),     // ✅ 4번째: mbti
                 request.emailAgree()
         );
