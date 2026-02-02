@@ -8,10 +8,12 @@ import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.member.service.auth.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/profile")
 @RequiredArgsConstructor
@@ -19,54 +21,29 @@ public class MemberProfileController {
 
     private final AuthService authService;
 
-    private Long getCurrentMemberId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getPrincipal() == null) return null;
-
-        try {
-            return Long.parseLong(authentication.getPrincipal().toString());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    // ✅ 내 프로필 조회
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<MemberProfileResponse>> getProfile() {
-        Long memberId = getCurrentMemberId();
-        if (memberId == null) {
-            return ResponseEntity
-                    .status(401)
-                    .body(ApiResponse.fail("UNAUTHORIZED", "로그인이 필요합니다."));
-        }
-
+    public ResponseEntity<ApiResponse<MemberProfileResponse>> getProfile(
+            @com.example.demo.login.global.annotation.Member Long memberId
+    ) {
         Member member = authService.getById(memberId);
-        return ResponseEntity.ok(ApiResponse.success(AuthMapper.toMemberProfileResponse(member)));
+        return ResponseEntity.ok(
+                ApiResponse.success(AuthMapper.toMemberProfileResponse(member))
+        );
     }
 
-    // ✅ 내 프로필 수정
     @PatchMapping("/me")
     public ResponseEntity<ApiResponse<String>> updateProfile(
+            @com.example.demo.login.global.annotation.Member Long memberId,
             @RequestBody MemberUpdateRequest updateRequest
     ) {
-        Long memberId = getCurrentMemberId();
-        if (memberId == null) {
-            return ResponseEntity
-                    .status(401)
-                    .body(ApiResponse.fail("UNAUTHORIZED", "로그인이 필요합니다."));
-        }
-
         authService.updateProfile(memberId, updateRequest);
         return ResponseEntity.ok(ApiResponse.success("프로필이 수정되었습니다."));
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<ApiResponse<String>> withdraw() {
-        Long memberId = getCurrentMemberId();
-        if (memberId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.fail("UNAUTHORIZED", "로그인이 필요합니다."));
-        }
-
+    public ResponseEntity<ApiResponse<String>> withdraw(
+            @com.example.demo.login.global.annotation.Member Long memberId
+    ) {
         authService.withdrawMember(memberId);
         return ResponseEntity.ok(ApiResponse.success("회원 탈퇴가 완료되었습니다."));
     }

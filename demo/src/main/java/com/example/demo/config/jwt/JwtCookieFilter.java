@@ -33,7 +33,14 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromCookie(request);
 
-        // ✅ 토큰이 있을 때만 인증 시도
+        // 🔥 핵심: 쿠키 없으면 Authorization 헤더에서 꺼내기
+        if (token == null || token.isBlank()) {
+            String bearer = request.getHeader("Authorization");
+            if (bearer != null && bearer.startsWith("Bearer ")) {
+                token = bearer.substring(7);
+            }
+        }
+
         if (token != null && !token.isBlank()) {
             try {
                 DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
@@ -54,7 +61,6 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             }
         }
 
-        // 🔥 절대 return / throw 금지
         filterChain.doFilter(request, response);
     }
 
