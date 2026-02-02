@@ -30,11 +30,11 @@ public class SameSiteCookieFilter implements Filter {
                         sb.append("; Max-Age=").append(cookie.getMaxAge());
                     }
 
-                    // 🔥 여기 분기
                     boolean isLocal =
                             request.getServerName().equals("localhost")
                                     || request.getServerName().equals("127.0.0.1");
 
+                    // 🔥 로컬 / 포스트맨에서는 Secure + SameSite 제거
                     if (!isLocal) {
                         sb.append("; Secure");
                         sb.append("; SameSite=None");

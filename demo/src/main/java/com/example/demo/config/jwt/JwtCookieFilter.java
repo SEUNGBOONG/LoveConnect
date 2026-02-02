@@ -15,7 +15,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
-
 @Slf4j
 public class JwtCookieFilter extends OncePerRequestFilter {
 
@@ -34,6 +33,7 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String token = extractTokenFromCookie(request);
 
+        // ✅ 토큰이 있을 때만 인증 시도
         if (token != null && !token.isBlank()) {
             try {
                 DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
@@ -49,12 +49,12 @@ public class JwtCookieFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (Exception e) {
-                // 🔥 이 로그가 핵심
                 log.error("❌ JWT 검증 실패", e);
                 SecurityContextHolder.clearContext();
             }
         }
 
+        // 🔥 절대 return / throw 금지
         filterChain.doFilter(request, response);
     }
 
