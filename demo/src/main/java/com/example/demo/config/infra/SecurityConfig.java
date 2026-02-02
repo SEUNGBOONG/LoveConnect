@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -36,13 +37,14 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        // 🔓 무조건 열어야 하는 것들
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/login", "/logout", "/reset-password").permitAll()
-                        .requestMatchers("/auth/me").authenticated()
-                        .requestMatchers("/profile/**").authenticated()
+                        .requestMatchers(
+                                "/auth/**",      // ✅ 로그인, 회원가입, 내 정보
+                                "/phone/**",     // 전화번호 인증
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
-                );
+                )
 
         return http.build();
     }
