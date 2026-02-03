@@ -6,7 +6,6 @@ import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
@@ -37,12 +36,9 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅🔥 이 줄이 핵심
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
                         .requestMatchers(
-                                "/auth/**",
-                                "/phone/**",
+                                "/auth/**",      // ✅ 로그인, 회원가입, 내 정보
+                                "/phone/**",     // 전화번호 인증
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()

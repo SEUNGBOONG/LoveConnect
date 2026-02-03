@@ -9,6 +9,8 @@ import com.example.demo.match.domain.*;
 import com.example.demo.match.dto.TiktokMatchRequestCommand;
 import com.example.demo.match.dto.TiktokMatchResponseDto;
 import com.example.demo.match.event.MatchCompletedEvent;
+import com.example.demo.match.strategy.MatchScoreStrategy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -17,24 +19,18 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
-public class TiktokMatchRequestService extends AbstractMatchRequestService<TiktokMatchRequest> {
+public class TiktokMatchRequestService {
 
     private final TiktokMatchRequestRepository tiktokMatchRequestRepository;
-
-    public TiktokMatchRequestService(
-            TiktokMatchRequestRepository tiktokMatchRequestRepository,
-            MemberJpaRepository memberRepository,
-            ApplicationEventPublisher eventPublisher
-    ) {
-        super(memberRepository, eventPublisher);
-        this.tiktokMatchRequestRepository = tiktokMatchRequestRepository;
-    }
+    private final MemberJpaRepository memberRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void createMatchRequest(Long memberId, TiktokMatchRequestCommand command) {
         Member me = getMember(memberId);
-        
+
         // ✅ 1. 내 TikTok ID 필수
         if (me.getTiktokId() == null) {
             throw new CustomException(CustomErrorCode.TIKTOK_ID_REQUIRED);
@@ -44,80 +40,68 @@ public class TiktokMatchRequestService extends AbstractMatchRequestService<Tikto
         if (command.getTargetTiktok() == null || command.getTargetTiktok().isBlank()) {
             throw new CustomException(CustomErrorCode.TARGET_TIKTOK_REQUIRED);
         }
-        
-        processMatchRequest(memberId, command);
-    }
-    
-    @Override
-    protected Optional<TiktokMatchRequest> findReverseRequest(
-            Member requester, 
-            String requesterPhone, 
-            String requesterSocialId
-    ) {
-        return tiktokMatchRequestRepository
-                .findByTargetPhoneNumberAndTargetTiktokIdAndMatchedFalseAndStatus(
-                        requesterPhone,
-                        requesterSocialId,
-                        MatchStatus.PENDING
-                );
-    }
-    
-    @Override
-    protected TiktokMatchRequest createNewRequest(Member requester, Object command) {
-        TiktokMatchRequestCommand cmd = (TiktokMatchRequestCommand) command;
-        
-        String encTargetPhone = AESUtil.encrypt(cmd.getTargetPhone().trim());
-        String encTargetTiktok = AESUtil.encrypt(cmd.getTargetTiktok().trim().toLowerCase());
-        
-        return TiktokMatchRequest.builder()
-                .requester(requester)
-                .targetName(cmd.getTargetName())
+
+        String inputPhone = command.getTargetPhone().trim();
+        String inputTiktok = command.getTargetTiktok().trim().toLowerCase();
+
+        String encTargetPhone = AESUtil.encrypt(inputPhone);
+        String encTargetTiktok = AESUtil.encrypt(inputTiktok);
+
+        String myEncPhone = me.getPhoneNumber();
+        String myEncTiktok = me.getTiktokId();
+
+        if (tiktokMatchRequestRepository.existsByRequester(me)) {
+            throw new CustomException(CustomErrorCode.DUPLICATE_MATCH_REQUEST);
+        }
+
+        TiktokMatchRequest myRequest = TiktokMatchRequest.builder()
+                .requester(me)
+                .targetName(command.getTargetName())
                 .targetTiktokId(encTargetTiktok)
                 .targetPhoneNumber(encTargetPhone)
-                .requesterDesire(cmd.getRequesterDesire())
+                .requesterDesire(command.getRequesterDesire())
                 .status(MatchStatus.PENDING)
                 .matched(false)
                 .build();
-    }
-    
-    @Override
-    protected MatchCompletedEvent completeMatch(
-            TiktokMatchRequest myRequest, 
-            TiktokMatchRequest reverseRequest, 
-            Member me, 
-            Member opponent
-    ) {
-        int myDesire = myRequest.getRequesterDesire();
-        int opponentDesire = reverseRequest.getRequesterDesire();
-        
-        MatchMessage message = calculateMatchMessage(myDesire, opponentDesire);
-        
-        MatchCompletedEvent event = myRequest.matchWith(reverseRequest, message, opponentDesire);
-        
+
         tiktokMatchRequestRepository.save(myRequest);
-        tiktokMatchRequestRepository.save(reverseRequest);
-        
-        return event;
-    }
-    
-    @Override
-    protected boolean existsByRequester(Member requester) {
-        return tiktokMatchRequestRepository.existsByRequester(requester);
-    }
-    
-    @Override
-    protected void saveRequest(TiktokMatchRequest request) {
-        tiktokMatchRequestRepository.save(request);
-    }
-    
-    @Override
-    protected String getRequesterSocialId(Member member) {
-        return member.getTiktokId();
-    }
-    
-    @Override
-    protected Member getOpponentFromRequest(TiktokMatchRequest request) {
-        return request.getRequester();
+
+        Optional<TiktokMatchRequest> reverseOpt =
+                tiktokMatchRequestRepository
+                        .findByTargetPhoneNumberAndTargetTiktokIdAndMatchedFalseAndStatus(
+                                myEncPhone,
+                                myEncTiktok,
+                                MatchStatus.PENDING
+                        );
+
+        if (reverseOpt.isPresent()) {
+            TiktokMatchRequest reverseReq = reverseOpt.get();
+            Member opponent = reverseReq.getRequester();
+
+            MatchMessage message = MatchScoreStrategy.calculate(
+                    myRequest.getRequesterDesire(),
+                    reverseReq.getRequesterDesire()
+            );
+
+            myRequest.setMatched(true);
+            myRequest.setMatchedMember(opponent);
+            myRequest.setTargetDesire(reverseReq.getRequesterDesire());
+            myRequest.setMatchMessage(message);
+            myRequest.setStatus(MatchStatus.MATCHED);
+
+            reverseReq.setMatched(true);
+            reverseReq.setMatchedMember(me);
+            reverseReq.setTargetDesire(myRequest.getRequesterDesire());
+            reverseReq.setMatchMessage(message);
+            reverseReq.setStatus(MatchStatus.MATCHED);
+
+            tiktokMatchRequestRepository.save(myRequest);
+            tiktokMatchRequestRepository.save(reverseReq);
+
+            eventPublisher.publishEvent(
+                    new MatchCompletedEvent(me, opponent, message)
+            );
+        }
     }
 
     @Transactional(readOnly = true)
@@ -148,7 +132,7 @@ public class TiktokMatchRequestService extends AbstractMatchRequestService<Tikto
                 .findByRequester(requester)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
-        if (!request.canUpdate()) {
+        if (request.isMatched()) {
             throw new CustomException(CustomErrorCode.MATCH_ALREADY_COMPLETED);
         }
 
@@ -167,10 +151,11 @@ public class TiktokMatchRequestService extends AbstractMatchRequestService<Tikto
                 .findByRequester(requester)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_NOT_FOUND));
 
-        if (!request.canDelete()) {
-            throw new IllegalStateException("삭제할 수 없는 요청입니다.");
-        }
-
         tiktokMatchRequestRepository.delete(request);
+    }
+
+    private Member getMember(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MATCH_MEMBER_NOT_FOUND));
     }
 }
