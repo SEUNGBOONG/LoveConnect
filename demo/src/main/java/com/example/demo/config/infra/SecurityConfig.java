@@ -36,12 +36,20 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
+                        // 공개 API
                         .requestMatchers(
-                                "/auth/**",      // ✅ 로그인, 회원가입, 내 정보
-                                "/phone/**",     // 전화번호 인증
+                                "/auth/**",
+                                "/phone/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+
+                        // 🔥 로그인 사용자 전용 (명시)
+                        .requestMatchers(
+                                "/profile/me"
+                        ).authenticated()
+
+                        // 나머지
                         .anyRequest().authenticated()
                 );
 
