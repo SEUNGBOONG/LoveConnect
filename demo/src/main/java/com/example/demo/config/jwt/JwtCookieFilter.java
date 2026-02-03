@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+
 @Slf4j
 public class JwtCookieFilter extends OncePerRequestFilter {
 
@@ -32,17 +33,16 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // 🔥 로그인/회원가입/인증번호는 JWT 검사 대상 아님
+        // 인증 제외 경로
         if (path.startsWith("/auth/")
                 || path.startsWith("/phone/")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")) {
-
             filterChain.doFilter(request, response);
             return;
         }
 
-        // ===== 여기부터 JWT 인증 =====
+        // ===== JWT 인증 =====
         String token = extractTokenFromCookie(request);
 
         if (token == null || token.isBlank()) {
@@ -52,17 +52,23 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             }
         }
 
-        if (token != null && !token.isBlank()) {
-            try {
-                DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
-                Long memberId = jwt.getClaim("memberId").asLong();
+        // 🔥 토큰이 아예 없으면 → 401
+        if (token == null || token.isBlank()) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
+        }
 
-                SecurityContextHolder.getContext().setAuthentication(
-                        new UsernamePasswordAuthenticationToken(memberId, null, List.of())
-                );
-            } catch (Exception e) {
-                SecurityContextHolder.clearContext();
-            }
+        try {
+            DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
+            Long memberId = jwt.getClaim("memberId").asLong();
+
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(memberId, null, List.of())
+            );
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
 
         filterChain.doFilter(request, response);
