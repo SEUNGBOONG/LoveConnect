@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -31,9 +30,21 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        // 🔥 로그인/회원가입/인증번호는 JWT 검사 대상 아님
+        if (path.startsWith("/auth/")
+                || path.startsWith("/phone/")
+                || path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ===== 여기부터 JWT 인증 =====
         String token = extractTokenFromCookie(request);
 
-        // 🔥 핵심: 쿠키 없으면 Authorization 헤더에서 꺼내기
         if (token == null || token.isBlank()) {
             String bearer = request.getHeader("Authorization");
             if (bearer != null && bearer.startsWith("Bearer ")) {
@@ -46,17 +57,10 @@ public class JwtCookieFilter extends OncePerRequestFilter {
                 DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
                 Long memberId = jwt.getClaim("memberId").asLong();
 
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                memberId,
-                                null,
-                                List.of()
-                        );
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(memberId, null, List.of())
+                );
             } catch (Exception e) {
-                log.error("❌ JWT 검증 실패", e);
                 SecurityContextHolder.clearContext();
             }
         }
