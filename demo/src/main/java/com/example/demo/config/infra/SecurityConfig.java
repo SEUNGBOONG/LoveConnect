@@ -28,28 +28,25 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 필터
+                // 필터 순서: SameSite 처리 -> JWT 인증 -> ID/PW 인증
                 .addFilterBefore(sameSiteCookieFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(
-                        new JwtCookieFilter(jwtTokenProvider),
-                        UsernamePasswordAuthenticationFilter.class
-                )
+                .addFilterBefore(new JwtCookieFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
 
                 .authorizeHttpRequests(auth -> auth
-                        // 공개 API
+                        // 1. 완전 공개 API (로그인, 회원가입, 인증번호 등)
                         .requestMatchers(
                                 "/auth/**",
                                 "/phone/**",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/favicon.ico"
                         ).permitAll()
 
-                        // 🔥 로그인 사용자 전용 (명시)
-                        .requestMatchers(
-                                "/profile/me"
-                        ).authenticated()
+                        // 2. 프로필 관련 (403 방지: GET/POST/DELETE 모두 포함)
+                        // /profile/me, /profile/tiktok, /profile/signup 등
+                        .requestMatchers("/profile/**").authenticated()
 
-                        // 나머지
+                        // 3. 그 외 모든 요청도 인증 필요
                         .anyRequest().authenticated()
                 );
 

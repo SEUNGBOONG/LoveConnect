@@ -1,16 +1,13 @@
 package com.example.demo.config.jwt;
 
-import jakarta.servlet.Filter;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.ServletResponse;
+import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+
 @Component
 public class SameSiteCookieFilter implements Filter {
 
@@ -30,14 +27,12 @@ public class SameSiteCookieFilter implements Filter {
                         sb.append("; Max-Age=").append(cookie.getMaxAge());
                     }
 
-                    boolean isLocal =
-                            request.getServerName().equals("localhost")
-                                    || request.getServerName().equals("127.0.0.1");
+                    String serverName = request.getServerName();
+                    boolean isLocal = serverName.equals("localhost") || serverName.equals("127.0.0.1");
 
-                    // 🔥 로컬 / 포스트맨에서는 Secure + SameSite 제거
+                    // 운영 환경(https)에서만 Secure; SameSite=None 적용
                     if (!isLocal) {
-                        sb.append("; Secure");
-                        sb.append("; SameSite=None");
+                        sb.append("; Secure; SameSite=None");
                     }
 
                     if (cookie.isHttpOnly()) sb.append("; HttpOnly");
@@ -49,7 +44,6 @@ public class SameSiteCookieFilter implements Filter {
                     super.addHeader("Set-Cookie", sb.toString());
                 }
             };
-
             chain.doFilter(request, wrappedResponse);
         } else {
             chain.doFilter(request, response);

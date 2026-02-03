@@ -23,12 +23,12 @@ public class CorsConfig {
                 "http://localhost:3000",
                 "https://localhost:3000",
                 "http://localhost:5173"
-
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization"));
-        config.setAllowCredentials(true); // 쿠키 포함을 허용
+        // Header에 필요한 값들 명시 (Authorization 필수)
+        config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization", "Cookie"));
+        config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
