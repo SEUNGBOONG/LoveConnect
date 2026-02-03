@@ -136,9 +136,20 @@ public class TiktokMatchRequestService {
             throw new CustomException(CustomErrorCode.MATCH_ALREADY_COMPLETED);
         }
 
+        String phone = command.getTargetPhone();
+        String tiktok = command.getTargetTiktok();
+
+        String encryptedPhone = phone == null || phone.isBlank()
+                ? null
+                : AESUtil.encrypt(phone.trim());
+
+        String encryptedTiktok = tiktok == null || tiktok.isBlank()
+                ? null
+                : AESUtil.encrypt(tiktok.trim().toLowerCase());
+
         request.updateTargetInfo(
-                AESUtil.encrypt(command.getTargetPhone().trim()),
-                AESUtil.encrypt(command.getTargetTiktok().trim().toLowerCase()),
+                encryptedPhone,
+                encryptedTiktok,
                 command.getTargetName(),
                 command.getRequesterDesire()
         );

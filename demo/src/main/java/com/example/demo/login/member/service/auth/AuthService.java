@@ -99,11 +99,24 @@ public class AuthService {
     public void updateProfile(Long memberId, MemberUpdateRequest request) {
         Member member = getById(memberId);
 
+        String instagramId = request.instagramId();
+        String tiktokId = request.tiktokId();
+
+        String processedInstagramId =
+                instagramId == null || instagramId.isBlank()
+                        ? null
+                        : AESUtil.encrypt(instagramId.trim().toLowerCase());
+
+        String processedTiktokId =
+                tiktokId == null || tiktokId.isBlank()
+                        ? null
+                        : AESUtil.encrypt(tiktokId.trim().toLowerCase());
+
         member.updateProfile(
-                request.nickname(),
-                request.instagramId(),
-                request.tiktokId(),  // ✅ 3번째: tiktok
-                request.mbti(),     // ✅ 4번째: mbti
+                request.nickname(),          // null이면 유지
+                processedInstagramId,        // 🔥 null 허용
+                processedTiktokId,           // 🔥 null 허용
+                request.mbti(),
                 request.emailAgree()
         );
     }

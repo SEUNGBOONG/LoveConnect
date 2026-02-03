@@ -1,8 +1,15 @@
 package com.example.demo.login.member.domain.member;
 
-import com.example.demo.common.util.AESUtil;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -85,23 +92,16 @@ public class Member {
             String mbti,
             Boolean emailAgree
     ) {
-        this.memberNickName = nickname;
-
-        if (instagramId != null) {
-            this.instagramId = AESUtil.encrypt(instagramId);
+        if (nickname != null) {
+            this.memberNickName = nickname;
         }
+
+        // 🔥 null이면 null로, 값 있으면 그대로
+        this.instagramId = instagramId;
+        this.tiktokId = tiktokId;
 
         if (mbti != null) {
             this.mbti = mbti;
-        }
-
-        // 🔥 핵심
-        if (tiktokId != null) {
-            if (tiktokId.isBlank()) {
-                this.tiktokId = null; // ← "삭제" 혹은 "미등록"
-            } else {
-                this.tiktokId = AESUtil.encrypt(tiktokId.trim().toLowerCase());
-            }
         }
 
         if (emailAgree != null) {
