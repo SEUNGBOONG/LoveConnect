@@ -47,8 +47,8 @@ public class MatchRequestService extends MatchRequestServiceTemplate<MatchReques
             String requesterSocialId
     ) {
         return matchRequestRepository.findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalseAndStatus(
-                PhoneNumber.fromRaw(AESUtil.decrypt(requesterPhone)),
-                SocialId.fromRaw(AESUtil.decrypt(requesterSocialId)),
+                PhoneNumber.fromEncrypted(requesterPhone),
+                SocialId.fromEncrypted(requesterSocialId),
                 MatchStatus.PENDING
         );
     }

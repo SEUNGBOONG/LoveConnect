@@ -27,6 +27,13 @@ public class SocialId {
         );
     }
 
+    public static SocialId fromEncrypted(String encrypted) {
+        if (encrypted == null || encrypted.isBlank()) {
+            throw new IllegalArgumentException("암호화된 소셜 ID는 필수입니다.");
+        }
+        return new SocialId(encrypted.trim());
+    }
+
     public String decrypt() {
         return AESUtil.decrypt(encrypted);
     }
