@@ -1,10 +1,21 @@
 package com.example.demo.match.domain;
 
 import com.example.demo.login.member.domain.member.Member;
-import com.example.demo.match.domain.MatchMessage;
-import com.example.demo.match.event.MatchCompletedEvent;
-import jakarta.persistence.*;
-import lombok.*;
+import com.example.demo.match.domain.value.PhoneNumber;
+import com.example.demo.match.domain.value.SocialId;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import static jakarta.persistence.FetchType.LAZY;
 
@@ -13,7 +24,6 @@ import static jakarta.persistence.FetchType.LAZY;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Setter
 public class MatchRequest {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,8 +32,12 @@ public class MatchRequest {
     @ManyToOne(fetch = LAZY)
     private Member requester;
 
-    private String targetPhoneNumber;
-    private String targetInstagramId;
+    @Embedded
+    private PhoneNumber targetPhoneNumber;
+
+    @Embedded
+    private SocialId targetInstagramId;
+
     private String targetName;
 
     private boolean matched;
@@ -40,25 +54,73 @@ public class MatchRequest {
     @Enumerated(EnumType.STRING)
     private MatchStatus status;
 
-    public MatchCompletedEvent matchWith(MatchRequest other, MatchMessage message) {
+    /**
+     * 매칭 완료 처리 - 도메인 책임
+     */
+    public void matchWith(MatchRequest other, MatchMessage message) {
+        validateCanMatch();
+        other.validateCanMatch();
+        
         this.matched = true;
-        this.matchedMember = other.getRequester();
+        this.matchedMember = other.requester;
+        this.targetDesire = other.requesterDesire;
         this.matchMessage = message;
         this.status = MatchStatus.MATCHED;
 
         other.matched = true;
-        other.matchedMember = this.getRequester();
+        other.matchedMember = this.requester;
+        other.targetDesire = this.requesterDesire;
         other.matchMessage = message;
         other.status = MatchStatus.MATCHED;
-
-        return new MatchCompletedEvent(this.getRequester(), other.getRequester(), message);
+    }
+    
+    /**
+     * 매칭 가능 여부 검증
+     */
+    private void validateCanMatch() {
+        if (this.matched) {
+            throw new IllegalStateException("이미 매칭 완료된 요청입니다.");
+        }
+        if (this.status != MatchStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 요청만 매칭 가능합니다.");
+        }
+    }
+    
+    /**
+     * 수정 가능 여부 확인
+     */
+    public boolean canUpdate() {
+        return !matched && status == MatchStatus.PENDING;
+    }
+    
+    /**
+     * 삭제 가능 여부 확인
+     */
+    public boolean canDelete() {
+        return true; // 매칭 상태와 관계없이 삭제 허용
+    }
+    
+    /**
+     * 매칭 결과 확인 가능 여부
+     */
+    public boolean hasMatchResult() {
+        return matched && matchMessage != null;
     }
 
-    // MatchRequest.java
-
-    public void updateTargetInfo(String phone, String insta, String name, int desire) {
+    /**
+     * 대상 정보 업데이트
+     */
+    public void updateTarget(
+            PhoneNumber phone,
+            SocialId socialId,
+            String name,
+            int desire
+    ) {
+        if (!canUpdate()) {
+            throw new IllegalStateException("매칭 완료된 요청은 수정할 수 없습니다.");
+        }
         this.targetPhoneNumber = phone;
-        this.targetInstagramId = insta;
+        this.targetInstagramId = socialId;
         this.targetName = name;
         this.requesterDesire = desire;
     }

@@ -50,9 +50,66 @@ public class TiktokMatchRequest {
     @Enumerated(EnumType.STRING)
     private MatchStatus status;
 
-    // MatchRequest.java
+    /**
+     * 매칭 완료 처리 - 도메인 책임
+     */
+    public void matchWith(TiktokMatchRequest other, MatchMessage message) {
+        validateCanMatch();
+        other.validateCanMatch();
+        
+        this.matched = true;
+        this.matchedMember = other.requester;
+        this.targetDesire = other.requesterDesire;
+        this.matchMessage = message;
+        this.status = MatchStatus.MATCHED;
 
+        other.matched = true;
+        other.matchedMember = this.requester;
+        other.targetDesire = this.requesterDesire;
+        other.matchMessage = message;
+        other.status = MatchStatus.MATCHED;
+    }
+    
+    /**
+     * 매칭 가능 여부 검증
+     */
+    private void validateCanMatch() {
+        if (this.matched) {
+            throw new IllegalStateException("이미 매칭 완료된 요청입니다.");
+        }
+        if (this.status != MatchStatus.PENDING) {
+            throw new IllegalStateException("대기 중인 요청만 매칭 가능합니다.");
+        }
+    }
+    
+    /**
+     * 수정 가능 여부 확인
+     */
+    public boolean canUpdate() {
+        return !matched && status == MatchStatus.PENDING;
+    }
+    
+    /**
+     * 삭제 가능 여부 확인
+     */
+    public boolean canDelete() {
+        return true; // 매칭 상태와 관계없이 삭제 허용
+    }
+    
+    /**
+     * 매칭 결과 확인 가능 여부
+     */
+    public boolean hasMatchResult() {
+        return matched && matchMessage != null;
+    }
+
+    /**
+     * 대상 정보 업데이트
+     */
     public void updateTargetInfo(String phone, String tiktok, String name, int desire) {
+        if (!canUpdate()) {
+            throw new IllegalStateException("매칭 완료된 요청은 수정할 수 없습니다.");
+        }
         this.targetPhoneNumber = phone;
         this.targetTiktokId = tiktok;
         this.targetName = name;
