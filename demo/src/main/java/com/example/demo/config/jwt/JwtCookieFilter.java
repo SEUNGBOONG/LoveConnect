@@ -33,7 +33,6 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        // 인증 제외 경로
         if (path.startsWith("/auth/")
                 || path.startsWith("/phone/")
                 || path.startsWith("/swagger-ui")
@@ -42,7 +41,6 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             return;
         }
 
-        // ===== JWT 인증 =====
         String token = extractTokenFromCookie(request);
 
         if (token == null || token.isBlank()) {
@@ -52,28 +50,22 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             }
         }
 
-        // 🔥 토큰이 아예 없으면 → 401
-        if (token == null || token.isBlank()) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+        if (token != null && !token.isBlank()) {
+            try {
+                DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
+                Long memberId = jwt.getClaim("memberId").asLong();
+
+                SecurityContextHolder.getContext().setAuthentication(
+                        new UsernamePasswordAuthenticationToken(memberId, null, List.of())
+                );
+            } catch (Exception e) {
+                SecurityContextHolder.clearContext();
+            }
         }
 
-        try {
-            DecodedJWT jwt = jwtTokenProvider.verifyToken(token);
-            Long memberId = jwt.getClaim("memberId").asLong();
-
-            SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(memberId, null, List.of())
-            );
-        } catch (Exception e) {
-            SecurityContextHolder.clearContext();
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
-
+        // 🔥 여기서 절대 response.setStatus / return 하지 말 것
         filterChain.doFilter(request, response);
     }
-
     private String extractTokenFromCookie(HttpServletRequest request) {
         if (request.getCookies() == null) return null;
 
