@@ -23,7 +23,7 @@ public class TossAuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> request) {
         try {
-            String authCode = request.get("code");
+            String authCode = request.get("authorizationCode");
             if (authCode == null || authCode.isEmpty()) {
                 throw new IllegalArgumentException("토스 인증 코드가 없습니다.");
             }
