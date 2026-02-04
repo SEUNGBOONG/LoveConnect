@@ -33,7 +33,13 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtCookieFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
 
                 .authorizeHttpRequests(auth -> auth
-                        // 1. 완전 공개 API (로그인, 회원가입, 인증번호 등)
+                        // ✅ 토스 연동 API (무조건 열기)
+                        .requestMatchers(
+                                "/api/v1/toss/login",
+                                "/api/v1/toss/disconnect"
+                        ).permitAll()
+
+                        // 기존 공개 API
                         .requestMatchers(
                                 "/auth/**",
                                 "/phone/**",
@@ -42,11 +48,10 @@ public class SecurityConfig {
                                 "/favicon.ico"
                         ).permitAll()
 
-                        // 2. 프로필 관련 (403 방지: GET/POST/DELETE 모두 포함)
-                        // /profile/me, /profile/tiktok, /profile/signup 등
+                        // 프로필은 로그인 필요
                         .requestMatchers("/profile/**").authenticated()
 
-                        // 3. 그 외 모든 요청도 인증 필요
+                        // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 );
 
