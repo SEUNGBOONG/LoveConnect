@@ -1,5 +1,5 @@
 package com.example.demo.login.toss.dto.request;
 
 public record TossDisconnectRequest(
-        String user_ci
+        String userKey
 ) {}

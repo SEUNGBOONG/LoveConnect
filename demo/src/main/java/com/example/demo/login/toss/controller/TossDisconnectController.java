@@ -24,7 +24,7 @@ public class TossDisconnectController {
             @RequestHeader("Authorization") String authorization
     ) {
         // TODO (선택): Basic Auth 검증
-        tossAuthService.disconnectByCi(request.user_ci());
+        tossAuthService.disconnectByCi(request.userKey());
         return ResponseEntity.ok().build(); // ★ 중요: 무조건 200 OK
     }
 }
