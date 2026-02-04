@@ -58,6 +58,12 @@ public class TossAuthService {
         String phone = TossDecryptor.decrypt((String) userData.get("phone"), decryptKey, decryptAad);
         String cleanPhone = phone.replaceAll("[^0-9]", "");
         String encryptedPhone = AESUtil.encrypt(cleanPhone);
+        // 🔥 Toss CI 복호화 (Disconnect 콜백용 핵심 값)
+        String ci = TossDecryptor.decrypt(
+                (String) userData.get("ci"),
+                decryptKey,
+                decryptAad
+        );
 
         // [D] 기존 회원 조회 및 가입 처리
         Optional<Member> memberOpt = memberRepository.findByPhoneNumber(encryptedPhone);
@@ -79,6 +85,8 @@ public class TossAuthService {
                         .useAgree(true)
                         .build()
         ));
+        // 🔥 Toss CI 저장 (신규/기존 회원 공통)
+        member.setTossCi(ci);
 
         // [E] 결과 반환
         String jwtToken = jwtTokenProvider.createToken(member.getId());
@@ -105,4 +113,13 @@ public class TossAuthService {
                 request.emailAgree()
         );
     }
+
+    @Transactional
+    public void disconnectByCi(String ci) {
+        Member member = memberRepository.findByTossCi(ci)
+                .orElseThrow(() -> new RuntimeException("회원 없음"));
+
+        member.disconnectToss(); // tossCi null 처리 or 상태 변경
+    }
+
 }

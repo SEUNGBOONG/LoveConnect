@@ -66,6 +66,9 @@ public class Member {
     @Column(nullable = false)
     private boolean isDeleted = false;
 
+    @Column(name = "toss_ci", unique = true)
+    private String tossCi;
+
     @Column
     private LocalDateTime withdrawnAt;
 
@@ -109,11 +112,19 @@ public class Member {
         }
     }
 
+    public void disconnectToss() {
+        this.tossCi = null;
+    }
+
     public void changePassword(String newEncodedPassword) {
         this.memberPassword = newEncodedPassword;
     }
 
     public void updatePassword(String newPassword) {
         this.memberPassword = newPassword;
+    }
+
+    public void setTossCi(String tossCi) {
+        this.tossCi = tossCi;
     }
 }
