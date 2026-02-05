@@ -6,7 +6,6 @@ import com.example.demo.login.member.controller.auth.dto.MemberUpdateRequest;
 import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.member.service.auth.AuthService;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -42,7 +41,6 @@ public class MemberProfileController {
     }
 
     @DeleteMapping("/me")
-    @SecurityRequirement(name = "BearerAuth")
     public ResponseEntity<ApiResponse<String>> withdraw(
             @com.example.demo.login.global.annotation.Member Long memberId
     ) {
