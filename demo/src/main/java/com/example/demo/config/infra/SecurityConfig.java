@@ -32,13 +32,13 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtCookieFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ 토스 연동 API
+                        // ✅ 토스
                         .requestMatchers(
                                 "/api/v1/toss/login",
                                 "/api/v1/toss/disconnect"
                         ).permitAll()
 
-                        // ✅ Swagger / 공개 API
+                        // ✅ Swagger
                         .requestMatchers(
                                 "/auth/**",
                                 "/phone/**",
@@ -47,14 +47,18 @@ public class SecurityConfig {
                                 "/favicon.ico"
                         ).permitAll()
 
-                        // 🔥🔥🔥 여기 추가 🔥🔥🔥
-                        // Swagger에서 회원탈퇴 테스트 허용
+                        // 🔥🔥🔥 이 두 줄이 핵심 🔥🔥🔥
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.OPTIONS,
+                                "/profile/**"
+                        ).permitAll()
+
                         .requestMatchers(
                                 org.springframework.http.HttpMethod.DELETE,
                                 "/profile/member"
                         ).permitAll()
 
-                        // 실제 서비스용 (그 외 프로필 API)
+                        // 실제 보호
                         .requestMatchers("/profile/**").authenticated()
 
                         .anyRequest().authenticated()
