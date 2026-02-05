@@ -28,18 +28,17 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 필터 순서: SameSite 처리 -> JWT 인증 -> ID/PW 인증
                 .addFilterBefore(sameSiteCookieFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtCookieFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ 토스 연동 API (무조건 열기)
+                        // ✅ 토스 연동 API
                         .requestMatchers(
                                 "/api/v1/toss/login",
                                 "/api/v1/toss/disconnect"
                         ).permitAll()
 
-                        // 기존 공개 API
+                        // ✅ Swagger / 공개 API
                         .requestMatchers(
                                 "/auth/**",
                                 "/phone/**",
@@ -48,10 +47,16 @@ public class SecurityConfig {
                                 "/favicon.ico"
                         ).permitAll()
 
-                        // 프로필은 로그인 필요
+                        // 🔥🔥🔥 여기 추가 🔥🔥🔥
+                        // Swagger에서 회원탈퇴 테스트 허용
+                        .requestMatchers(
+                                org.springframework.http.HttpMethod.DELETE,
+                                "/profile/member"
+                        ).permitAll()
+
+                        // 실제 서비스용 (그 외 프로필 API)
                         .requestMatchers("/profile/**").authenticated()
 
-                        // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 );
 

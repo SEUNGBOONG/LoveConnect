@@ -40,7 +40,7 @@ public class MemberProfileController {
         return ResponseEntity.ok(ApiResponse.success("프로필이 수정되었습니다."));
     }
 
-    @DeleteMapping("/me")
+    @DeleteMapping("/member")
     public ResponseEntity<ApiResponse<String>> withdraw(
             @com.example.demo.login.global.annotation.Member Long memberId
     ) {
