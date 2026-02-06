@@ -17,9 +17,10 @@ public class TossAuthController {
     private final TossAuthService tossAuthService;
 
     @PostMapping("/login")
+    // [수정] 서비스에서 던지는 예외를 상위(스프링 핸들러)로 넘깁니다.
     public ResponseEntity<Map<String, Object>> login(
             @RequestBody Map<String, String> body
-    ) {
+    ) throws Exception {
 
         String authorizationCode = body.get("authorizationCode");
         String referrer = body.get("referrer");

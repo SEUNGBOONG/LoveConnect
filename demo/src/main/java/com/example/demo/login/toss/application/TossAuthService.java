@@ -35,8 +35,10 @@ public class TossAuthService {
 
     @Value("${toss.decrypt.aad}")
     private String decryptAad;
+
     @Transactional
-    public Map<String, Object> executeTossLogin(String authorizationCode, String referrer) {
+    // [수정] throws Exception 추가하여 복호화 시 발생하는 예외를 상위로 던집니다.
+    public Map<String, Object> executeTossLogin(String authorizationCode, String referrer) throws Exception {
         String tokenUrl = baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/generate-token";
 
         HttpHeaders headers = new HttpHeaders();
@@ -70,9 +72,10 @@ public class TossAuthService {
 
         String name = (String) user.get("name");
 
+        // [컴파일 에러 해결 지점]
         String decryptedPhone = TossDecryptor.decrypt((String) user.get("phone"), decryptKey, decryptAad);
         String ci = TossDecryptor.decrypt((String) user.get("ci"), decryptKey, decryptAad);
-        Long userKey = ((Number) user.get("userKey")).longValue(); // ✅ 추가
+        Long userKey = ((Number) user.get("userKey")).longValue();
 
         String cleanPhone = decryptedPhone.replaceAll("[^0-9]", "");
         String encryptedPhone = AESUtil.encrypt(cleanPhone);
@@ -91,7 +94,7 @@ public class TossAuthService {
         ));
 
         member.setTossCi(ci);
-        member.setUserKey(userKey); // ✅ 여기!!
+        member.setUserKey(userKey);
 
         String jwt = jwtTokenProvider.createToken(member.getId());
 
@@ -102,6 +105,7 @@ public class TossAuthService {
                 "nickname", member.getMemberNickName()
         );
     }
+
     @Transactional
     public void updateMemberProfile(Long memberId, TossAdditionalInfoRequest request) {
         Member member = memberRepository.findById(memberId).orElseThrow();
