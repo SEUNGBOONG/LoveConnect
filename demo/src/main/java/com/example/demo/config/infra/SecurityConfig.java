@@ -31,37 +31,9 @@ public class SecurityConfig {
                 .addFilterBefore(sameSiteCookieFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtCookieFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
 
+                // 🔥🔥🔥 전부 허용 🔥🔥🔥
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ 토스
-                        .requestMatchers(
-                                "/api/v1/toss/login",
-                                "/api/v1/toss/disconnect"
-                        ).permitAll()
-
-                        // ✅ Swagger
-                        .requestMatchers(
-                                "/auth/**",
-                                "/phone/**",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/favicon.ico"
-                        ).permitAll()
-
-                        // 🔥🔥🔥 이 두 줄이 핵심 🔥🔥🔥
-                        .requestMatchers(
-                                org.springframework.http.HttpMethod.OPTIONS,
-                                "/profile/**"
-                        ).permitAll()
-
-                        .requestMatchers(
-                                org.springframework.http.HttpMethod.DELETE,
-                                "/profile/member"
-                        ).permitAll()
-
-                        // 실제 보호
-                        .requestMatchers("/profile/**").authenticated()
-
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 );
 
         return http.build();
