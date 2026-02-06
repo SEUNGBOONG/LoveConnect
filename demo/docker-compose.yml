@@ -28,10 +28,7 @@ services:
       - SPRING_PROFILES_ACTIVE=toss
 
       - TOSS_CERT_PATH=file:/app/certs/toss-cert.p12
-      - TOSS_CERT_PASSWORD=199310
 
-      - TOSS_DECRYPT_KEY=JH1l/ziZ8/f50lfmgitC0fMHgdiqh6UZ65hjTrR7Kds=
-      - TOSS_DECRYPT_AAD=TOSS
       - TOSS_API_BASE_URL=https://apps-in-toss-api.toss.im
 
 networks:
