@@ -19,15 +19,19 @@ services:
     networks:
       - loveconnect-net
 
-    # 🔥 인증서 파일만 정확히 마운트
     volumes:
       - ./src/main/resources/toss-cert.p12:/app/certs/toss-cert.p12
 
     environment:
-      # 🔥 이게 제일 중요
       - SPRING_PROFILES_ACTIVE=toss
 
+      # 🔥 mTLS 필수
       - TOSS_CERT_PATH=file:/app/certs/toss-cert.p12
+      - TOSS_CERT_PASSWORD=199310   # ← 🔥 반드시 추가
+
+      # 🔥 복호화 필수
+      - TOSS_DECRYPT_KEY=JH1l/ziZ8/f50lfmgitC0fMHgdiqh6UZ65hjTrR7Kds=
+      - TOSS_DECRYPT_AAD=TOSS
 
       - TOSS_API_BASE_URL=https://apps-in-toss-api.toss.im
 
