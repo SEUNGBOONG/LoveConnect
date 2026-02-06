@@ -12,10 +12,15 @@ jobs:
 
       - name: Create Resources and Config Files
         run: |
-          # Dockerfile이 ./demo 안에 있으므로, 모든 리소스도 그 하위에 생성
-          mkdir -p ./demo/src/main/resources
-          printf "%s" "${{ secrets.PROPERTIES }}" > ./demo/src/main/resources/application.properties
-          echo -n "${{ secrets.TOSS_CERT_BASE64 }}" | base64 --decode > ./demo/src/main/resources/toss-cert.p12
+          # 1. 디렉토리 생성 (루트 기준 src/main/resources)
+          mkdir -p src/main/resources
+          
+          # 2. 파일 생성 (printf로 공백 오염 방지)
+          printf "%s" "${{ secrets.PROPERTIES }}" > src/main/resources/application.properties
+          echo -n "${{ secrets.TOSS_CERT_BASE64 }}" | base64 --decode > src/main/resources/toss-cert.p12
+          
+          # 디버깅용: 파일이 제대로 생성되었는지 로그로 확인 (나중에 지우셔도 됩니다)
+          ls -R src/main/resources
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -26,8 +31,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: ./demo
-          file: ./demo/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
 
@@ -35,7 +40,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: docker-compose-file
-          path: ./demo/docker-compose.yml
+          path: ./docker-compose.yml
 
   deploy:
     needs: build-and-push
