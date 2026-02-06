@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
-
 @RestController
 @RequestMapping("/api/v1/toss")
 @RequiredArgsConstructor
@@ -17,16 +16,24 @@ public class TossAuthController {
     private final TossAuthService tossAuthService;
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(
-            @RequestBody Map<String, String> body) throws Exception {
-
-        return ResponseEntity.ok(
-                tossAuthService.executeTossLogin(body.get("authorizationCode"))
-        );
+    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+        try {
+            return ResponseEntity.ok(
+                    tossAuthService.executeTossLogin(body.get("authorizationCode"))
+            );
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "message", "서버 오류"
+            ));
+        }
     }
 
     @PatchMapping("/additional-info")
-    public ResponseEntity<?> additional(
+    public ResponseEntity<Void> additional(
             @Member Long memberId,
             @RequestBody TossAdditionalInfoRequest request) {
 
