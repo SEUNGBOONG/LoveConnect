@@ -8,35 +8,36 @@ import java.util.Base64;
 
 public class TossDecryptor {
 
+    // static 키워드 추가로 TossAuthService에서 바로 호출 가능하게 수정
     public static String decrypt(String encryptedText, String base64EncodedAesKey, String aad) throws Exception {
-        // 1. 상수 정의 (토스 명세: IV 12바이트, Tag 128비트)
-        final int IV_LENGTH = 12;
-        final int TAG_BIT_LENGTH = 128;
+        if (encryptedText == null || base64EncodedAesKey == null) {
+            throw new IllegalArgumentException("암호문 또는 키값이 비어있습니다.");
+        }
 
-        // 2. Base64 디코딩 (입력값 정제 포함)
+        final int IV_LENGTH = 12; // 토스 명세: IV 12바이트
+        final int TAG_BIT_LENGTH = 128; // GCM 권장 태그 길이
+
+        // 1. Base64 디코딩 (공백 제거)
         byte[] decodedData = Base64.getDecoder().decode(encryptedText.trim());
         byte[] keyByteArray = Base64.getDecoder().decode(base64EncodedAesKey.trim());
 
-        // 3. IV 추출 (데이터의 앞 12바이트)
+        // 2. IV 추출 (데이터의 앞 12바이트)
         byte[] iv = new byte[IV_LENGTH];
         System.arraycopy(decodedData, 0, iv, 0, IV_LENGTH);
 
-        // 4. Cipher 초기화
+        // 3. Cipher 설정 (AES/GCM/NoPadding)
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         SecretKeySpec keySpec = new SecretKeySpec(keyByteArray, "AES");
-
-        // [핵심] 여기서 128(bit)이 정확히 들어가야 Tag mismatch가 안 납니다.
         GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_BIT_LENGTH, iv);
 
         cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
 
-        // 5. AAD 설정 (UTF-8 명시)
-        if (aad != null) {
+        // 4. AAD(Additional Authenticated Data) 설정
+        if (aad != null && !aad.isBlank()) {
             cipher.updateAAD(aad.getBytes(StandardCharsets.UTF_8));
         }
 
-        // 6. 복호화 실행 (IV 이후의 데이터 전체를 넘김)
-        // 토스 예제 방식: cipher.doFinal(원본, 시작지점, 길이)
+        // 5. 복호화 실행 (IV 이후의 데이터부터)
         byte[] decrypted = cipher.doFinal(decodedData, IV_LENGTH, decodedData.length - IV_LENGTH);
 
         return new String(decrypted, StandardCharsets.UTF_8);
