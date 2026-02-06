@@ -13,7 +13,6 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.client.RestTemplate;
 
-import javax.net.ssl.SSLContext;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.time.Duration;
@@ -34,12 +33,11 @@ public class TossHttpConfig {
             keyStore.load(is, certPassword.toCharArray());
         }
 
-        SSLContext sslContext = SSLContextBuilder.create()
-                .loadKeyMaterial(keyStore, certPassword.toCharArray())
-                .build();
-
+        // SSLContextBuilder로 생성한 객체를 바로 소켓 팩토리에 주입합니다.
         SSLConnectionSocketFactory sslSocketFactory = SSLConnectionSocketFactoryBuilder.create()
-                .setSslContext(sslContext)
+                .setSslContext(SSLContextBuilder.create()
+                        .loadKeyMaterial(keyStore, certPassword.toCharArray())
+                        .build()) // 여기서 바로 build() 해서 넘깁니다.
                 .build();
 
         CloseableHttpClient httpClient = HttpClients.custom()
@@ -49,6 +47,7 @@ public class TossHttpConfig {
                 .build();
 
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
+        // HttpClient 5 버전에서는 setConnectTimeout 인자가 Duration 혹은 밀리초입니다.
         factory.setConnectTimeout((int) Duration.ofSeconds(5).toMillis());
 
         return new RestTemplate(factory);
