@@ -16,9 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -28,9 +26,6 @@ public class TossAuthService {
     private final RestTemplate tossRestTemplate;
     private final MemberJpaRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
-
-    // 🔒 authorizationCode 1회 보장
-    private static final Set<String> USED_CODES = ConcurrentHashMap.newKeySet();
 
     @Value("${toss.api.base-url}")
     private String baseUrl;
@@ -42,79 +37,116 @@ public class TossAuthService {
     private String decryptAad;
 
     @Transactional
-    public Map<String, Object> executeTossLogin(String authCode) throws Exception {
+    public Map<String, Object> executeTossLogin(
+            String authorizationCode,
+            String referrer
+    ) {
 
-        if (authCode == null || authCode.isBlank()) {
-            throw new IllegalArgumentException("authorizationCode 누락");
+        if (authorizationCode == null || authorizationCode.isBlank()) {
+            throw new IllegalArgumentException("authorizationCode가 비어있습니다.");
         }
 
-        // 🔥 중복 코드 차단
-        if (!USED_CODES.add(authCode)) {
-            log.warn("[TOSS] duplicate authorizationCode blocked: {}", authCode);
-            throw new IllegalArgumentException("이미 사용된 인증 코드입니다. 다시 로그인하세요.");
+        if (referrer == null || referrer.isBlank()) {
+            throw new IllegalArgumentException("referrer가 비어있습니다.");
         }
 
-        log.info("[TOSS] generate-token start. authCode={}", authCode);
+        /* =======================
+         * 1. AccessToken 발급
+         * ======================= */
+        String tokenUrl =
+                baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/generate-token";
 
-        /* 1. 토큰 발급 */
-        String tokenUrl = baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/generate-token";
-
-        HttpEntity<Map<String, String>> entity = new HttpEntity<>(
-                Map.of("authorizationCode", authCode, "referrer", "DEFAULT"),
-                new HttpHeaders() {{
-                    setContentType(MediaType.APPLICATION_JSON);
-                }}
+        Map<String, String> body = Map.of(
+                "authorizationCode", authorizationCode,
+                "referrer", referrer
         );
 
-        ResponseEntity<Map> tokenResponse =
-                tossRestTemplate.postForEntity(tokenUrl, entity, Map.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-        Map tokenBody = tokenResponse.getBody();
+        HttpEntity<Map<String, String>> entity =
+                new HttpEntity<>(body, headers);
 
-        if (tokenBody == null || !(tokenBody.get("success") instanceof Map)) {
-            log.error("[TOSS] token issue failed: {}", tokenBody);
-            throw new IllegalArgumentException("토스 인증이 만료되었습니다. 다시 로그인하세요.");
+        ResponseEntity<Map> tokenResponse;
+        try {
+            tokenResponse = tossRestTemplate.postForEntity(tokenUrl, entity, Map.class);
+        } catch (Exception e) {
+            log.error("[TOSS] token API call failed", e);
+            throw new IllegalStateException("토스 토큰 API 호출 실패");
         }
 
-        String accessToken =
-                (String) ((Map<?, ?>) tokenBody.get("success")).get("accessToken");
+        Map tokenBody = tokenResponse.getBody();
+        log.info("[TOSS] token response = {}", tokenBody);
 
-        /* 2. 사용자 정보 */
+        if (tokenBody == null || !(tokenBody.get("success") instanceof Map)) {
+            Object error = tokenBody != null ? tokenBody.get("error") : null;
+            throw new IllegalStateException("토스 토큰 발급 실패: " + error);
+        }
+
+        Map success = (Map) tokenBody.get("success");
+        String accessToken = (String) success.get("accessToken");
+
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new IllegalStateException("accessToken이 비어있습니다.");
+        }
+
+        /* =======================
+         * 2. 사용자 정보 조회
+         * ======================= */
+        String infoUrl =
+                baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/login-me";
+
+        HttpHeaders authHeaders = new HttpHeaders();
+        authHeaders.setBearerAuth(accessToken);
+
         ResponseEntity<Map> infoResponse =
                 tossRestTemplate.exchange(
-                        baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/login-me",
+                        infoUrl,
                         HttpMethod.GET,
-                        new HttpEntity<>(new HttpHeaders() {{
-                            setBearerAuth(accessToken);
-                        }}),
+                        new HttpEntity<>(authHeaders),
                         Map.class
                 );
 
         Map infoBody = infoResponse.getBody();
+        log.info("[TOSS] user info response = {}", infoBody);
+
         if (infoBody == null || !(infoBody.get("success") instanceof Map)) {
             throw new IllegalStateException("토스 사용자 정보 조회 실패");
         }
 
         Map user = (Map) infoBody.get("success");
 
-        /* 3. 복호화 */
-        String name = TossDecryptor.decrypt((String) user.get("name"), decryptKey, decryptAad);
-        String phone = TossDecryptor.decrypt((String) user.get("phone"), decryptKey, decryptAad);
-        String ci = TossDecryptor.decrypt((String) user.get("ci"), decryptKey, decryptAad);
+        /* =======================
+         * 3. 복호화
+         * ======================= */
+        String name = decryptOrNull((String) user.get("name"));
+        String phone = decryptOrNull((String) user.get("phone"));
+        String ci = decryptOrNull((String) user.get("ci"));
 
-        String encryptedPhone = AESUtil.encrypt(phone.replaceAll("[^0-9]", ""));
+        if (phone == null || ci == null) {
+            throw new IllegalStateException("필수 사용자 정보 복호화 실패");
+        }
 
-        /* 4. 회원 처리 */
-        Optional<Member> optional = memberRepository.findByPhoneNumber(encryptedPhone);
-        boolean isNew = optional.isEmpty();
+        String cleanPhone = phone.replaceAll("[^0-9]", "");
+        String encryptedPhone = AESUtil.encrypt(cleanPhone);
+
+        /* =======================
+         * 4. 회원 처리
+         * ======================= */
+        Optional<Member> optional =
+                memberRepository.findByPhoneNumber(encryptedPhone);
+
+        boolean isNewMember = optional.isEmpty();
 
         Member member = optional.orElseGet(() ->
                 memberRepository.save(
                         Member.builder()
                                 .memberName(name)
                                 .phoneNumber(encryptedPhone)
-                                .memberEmail(phone + "@toss.user")
-                                .memberNickName("토스_" + UUID.randomUUID().toString().substring(0, 6))
+                                .memberEmail(cleanPhone + "@toss.user")
+                                .memberNickName(
+                                        "토스_" + UUID.randomUUID().toString().substring(0, 6)
+                                )
                                 .memberPassword(UUID.randomUUID().toString())
                                 .build()
                 )
@@ -122,32 +154,48 @@ public class TossAuthService {
 
         member.setTossCi(ci);
 
-        /* 5. JWT */
+        /* =======================
+         * 5. JWT 발급
+         * ======================= */
+        String jwt = jwtTokenProvider.createToken(member.getId());
+
         return Map.of(
-                "token", jwtTokenProvider.createToken(member.getId()),
-                "isNewMember", isNew,
+                "token", jwt,
+                "isNewMember", isNewMember,
                 "memberId", member.getId(),
                 "nickname", member.getMemberNickName()
         );
     }
 
+    private String decryptOrNull(String encrypted) {
+        if (encrypted == null) return null;
+        try {
+            return TossDecryptor.decrypt(encrypted, decryptKey, decryptAad);
+        } catch (Exception e) {
+            log.error("[TOSS] decrypt failed", e);
+            return null;
+        }
+    }
+
+    /* =======================
+     * 부가 기능
+     * ======================= */
     @Transactional
     public void updateMemberProfile(Long memberId, TossAdditionalInfoRequest request) {
-        memberRepository.findById(memberId)
-                .orElseThrow()
-                .updateProfile(
-                        request.nickname(),
-                        request.instagramId(),
-                        request.tiktokId(),
-                        request.mbti(),
-                        request.emailAgree()
-                );
+        Member member = memberRepository.findById(memberId).orElseThrow();
+
+        member.updateProfile(
+                request.nickname(),
+                request.instagramId(),
+                request.tiktokId(),
+                request.mbti(),
+                request.emailAgree()
+        );
     }
 
     @Transactional
     public void disconnectByCi(String ci) {
-        memberRepository.findByTossCi(ci)
-                .orElseThrow()
-                .disconnectToss();
+        Member member = memberRepository.findByTossCi(ci).orElseThrow();
+        member.disconnectToss();
     }
 }
