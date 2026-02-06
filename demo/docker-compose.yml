@@ -19,8 +19,10 @@ services:
     networks:
       - loveconnect-net
 
-    volumes:
-      - ./src/main/resources/toss-cert.p12:/app/certs/toss-cert.p12
+    # [수정] volumes 부분은 아예 삭제하세요.
+    # Dockerfile에서 이미 /app/toss-cert.p12 위치로 복사했기 때문에 필요 없습니다.
+    # volumes:
+    #   - ./src/main/resources/toss-cert.p12:/app/certs/toss-cert.p12
 
     environment:
       - SPRING_PROFILES_ACTIVE=toss
