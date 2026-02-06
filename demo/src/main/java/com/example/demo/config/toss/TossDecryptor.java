@@ -8,7 +8,7 @@ import java.util.Base64;
 
 public class TossDecryptor {
 
-    public String decrypt(String encryptedText, String base64EncodedAesKey, String aad) throws Exception {
+    public static String decrypt(String encryptedText, String base64EncodedAesKey, String aad) throws Exception {
         // 1. 상수 정의 (토스 명세: IV 12바이트, Tag 128비트)
         final int IV_LENGTH = 12;
         final int TAG_BIT_LENGTH = 128;
