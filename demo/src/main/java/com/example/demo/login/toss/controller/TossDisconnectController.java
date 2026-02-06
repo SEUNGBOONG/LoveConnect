@@ -17,7 +17,7 @@ public class TossDisconnectController {
     public ResponseEntity<Void> disconnect(
             @RequestBody TossDisconnectRequest request) {
 
-        tossAuthService.disconnectByCi(request.userKey());
+        tossAuthService.disconnectByUserKey(request.userKey());
         return ResponseEntity.ok().build();
     }
 }

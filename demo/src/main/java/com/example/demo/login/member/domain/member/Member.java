@@ -1,15 +1,7 @@
 package com.example.demo.login.member.domain.member;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -69,6 +61,9 @@ public class Member {
     @Column(name = "toss_ci", unique = true)
     private String tossCi;
 
+    @Column(unique = true) // ✅ 추가
+    private Long userKey;
+
     @Column
     private LocalDateTime withdrawnAt;
 
@@ -76,14 +71,12 @@ public class Member {
         this.isDeleted = true;
         this.withdrawnAt = LocalDateTime.now();
 
-        // 민감 정보 비우기 (선택)
         this.memberPassword = null;
         this.phoneNumber = null;
         this.instagramId = null;
         this.memberNickName = "탈퇴한 회원";
     }
 
-    // Member.java
     public void updateTiktokId(String encryptedTiktokId) {
         this.tiktokId = encryptedTiktokId;
     }
@@ -98,8 +91,6 @@ public class Member {
         if (nickname != null) {
             this.memberNickName = nickname;
         }
-
-        // 🔥 null이면 null로, 값 있으면 그대로
         this.instagramId = instagramId;
         this.tiktokId = tiktokId;
 
@@ -114,6 +105,7 @@ public class Member {
 
     public void disconnectToss() {
         this.tossCi = null;
+        this.userKey = null;
     }
 
     public void changePassword(String newEncodedPassword) {
@@ -126,5 +118,9 @@ public class Member {
 
     public void setTossCi(String tossCi) {
         this.tossCi = tossCi;
+    }
+
+    public void setUserKey(Long userKey) {
+        this.userKey = userKey;
     }
 }

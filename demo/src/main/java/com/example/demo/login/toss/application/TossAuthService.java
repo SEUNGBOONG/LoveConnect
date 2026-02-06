@@ -35,128 +35,64 @@ public class TossAuthService {
 
     @Value("${toss.decrypt.aad}")
     private String decryptAad;
-
-    /**
-     * 토스 로그인 메인 플로우
-     */
     @Transactional
-    public Map<String, Object> executeTossLogin(
-            String authorizationCode,
-            String referrer
-    ) {
-
-        /* =======================
-         * 1. AccessToken 발급
-         * ======================= */
-        String tokenUrl =
-                baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/generate-token";
-
-        Map<String, String> body = Map.of(
-                "authorizationCode", authorizationCode,
-                "referrer", referrer
-        );
+    public Map<String, Object> executeTossLogin(String authorizationCode, String referrer) {
+        String tokenUrl = baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/generate-token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, String> body = Map.of("authorizationCode", authorizationCode, "referrer", referrer);
 
-        ResponseEntity<Map> tokenResponse =
-                tossRestTemplate.postForEntity(
-                        tokenUrl,
-                        new HttpEntity<>(body, headers),
-                        Map.class
-                );
+        ResponseEntity<Map> tokenResponse = tossRestTemplate.postForEntity(
+                tokenUrl, new HttpEntity<>(body, headers), Map.class);
 
         Map tokenBody = tokenResponse.getBody();
-
-        if (tokenBody == null || !(tokenBody.get("success") instanceof Map)) {
+        if (tokenBody == null || !(tokenBody.get("success") instanceof Map success)) {
             log.error("[TOSS] token issue failed: {}", tokenBody);
             throw new IllegalStateException("토스 토큰 발급 실패");
         }
 
-        Map success = (Map) tokenBody.get("success");
         String accessToken = (String) success.get("accessToken");
 
-        /* =======================
-         * 2. 사용자 정보 조회
-         * ======================= */
-        String infoUrl =
-                baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/login-me";
+        String infoUrl = baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/login-me";
 
         HttpHeaders authHeaders = new HttpHeaders();
         authHeaders.setBearerAuth(accessToken);
 
-        ResponseEntity<Map> infoResponse =
-                tossRestTemplate.exchange(
-                        infoUrl,
-                        HttpMethod.GET,
-                        new HttpEntity<>(authHeaders),
-                        Map.class
-                );
+        ResponseEntity<Map> infoResponse = tossRestTemplate.exchange(
+                infoUrl, HttpMethod.GET, new HttpEntity<>(authHeaders), Map.class);
 
         Map infoBody = infoResponse.getBody();
-
-        if (infoBody == null || !(infoBody.get("success") instanceof Map)) {
+        if (infoBody == null || !(infoBody.get("success") instanceof Map user)) {
             log.error("[TOSS] user info failed: {}", infoBody);
             throw new IllegalStateException("토스 사용자 정보 조회 실패");
         }
 
-        Map user = (Map) infoBody.get("success");
-
-        /* =======================
-         * 3. 사용자 정보 복호화
-         * ======================= */
         String name = (String) user.get("name");
 
-        String decryptedPhone;
-        String ci;
-
-        try {
-            decryptedPhone = TossDecryptor.decrypt(
-                    (String) user.get("phone"),
-                    decryptKey,
-                    decryptAad
-            );
-
-            ci = TossDecryptor.decrypt(
-                    (String) user.get("ci"),
-                    decryptKey,
-                    decryptAad
-            );
-        } catch (Exception e) {
-            log.error("[TOSS] decrypt failed", e);
-            throw new IllegalStateException("토스 사용자 정보 복호화 실패");
-        }
+        String decryptedPhone = TossDecryptor.decrypt((String) user.get("phone"), decryptKey, decryptAad);
+        String ci = TossDecryptor.decrypt((String) user.get("ci"), decryptKey, decryptAad);
+        Long userKey = ((Number) user.get("userKey")).longValue(); // ✅ 추가
 
         String cleanPhone = decryptedPhone.replaceAll("[^0-9]", "");
         String encryptedPhone = AESUtil.encrypt(cleanPhone);
 
-        /* =======================
-         * 4. 회원 조회 / 생성
-         * ======================= */
-        Optional<Member> optional =
-                memberRepository.findByPhoneNumber(encryptedPhone);
-
+        Optional<Member> optional = memberRepository.findByPhoneNumber(encryptedPhone);
         boolean isNewMember = optional.isEmpty();
 
-        Member member = optional.orElseGet(() ->
-                memberRepository.save(
-                        Member.builder()
-                                .memberName(name)
-                                .phoneNumber(encryptedPhone)
-                                .memberEmail(cleanPhone + "@toss.user")
-                                .memberNickName(
-                                        "토스_" + UUID.randomUUID().toString().substring(0, 6)
-                                )
-                                .memberPassword(UUID.randomUUID().toString())
-                                .build()
-                )
-        );
+        Member member = optional.orElseGet(() -> memberRepository.save(
+                Member.builder()
+                        .memberName(name)
+                        .phoneNumber(encryptedPhone)
+                        .memberEmail(cleanPhone + "@toss.user")
+                        .memberNickName("토스_" + UUID.randomUUID().toString().substring(0, 6))
+                        .memberPassword(UUID.randomUUID().toString())
+                        .build()
+        ));
 
         member.setTossCi(ci);
+        member.setUserKey(userKey); // ✅ 여기!!
 
-        /* =======================
-         * 5. JWT 발급
-         * ======================= */
         String jwt = jwtTokenProvider.createToken(member.getId());
 
         return Map.of(
@@ -166,15 +102,9 @@ public class TossAuthService {
                 "nickname", member.getMemberNickName()
         );
     }
-
-    /**
-     * 추가 정보 입력
-     */
     @Transactional
     public void updateMemberProfile(Long memberId, TossAdditionalInfoRequest request) {
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow();
-
+        Member member = memberRepository.findById(memberId).orElseThrow();
         member.updateProfile(
                 request.nickname(),
                 request.instagramId(),
@@ -184,14 +114,10 @@ public class TossAuthService {
         );
     }
 
-    /**
-     * 토스 연결 해제
-     */
     @Transactional
-    public void disconnectByCi(String ci) {
-        Member member = memberRepository.findByTossCi(ci)
-                .orElseThrow();
-
+    public void disconnectByUserKey(Long userKey) {
+        Member member = memberRepository.findByUserKey(userKey)
+                .orElseThrow(() -> new IllegalArgumentException("해당 userKey로 등록된 사용자가 없습니다."));
         member.disconnectToss();
     }
 }
