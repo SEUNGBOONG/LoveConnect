@@ -10,11 +10,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # [중요] -n 옵션 추가하여 데이터 뒤에 줄바꿈이 붙지 않게 함
+      # [수정] PROPERTIES와 인증서를 빌드 시점에 이미지 내부로 주입
       - name: Create Resources and Config Files
         run: |
           mkdir -p ./demo/src/main/resources
-          echo -n "${{ secrets.PROPERTIES }}" > ./demo/src/main/resources/application.properties
+          # printf를 사용해 시크릿 값의 원본 그대로를 파일로 저장
+          printf "%s" "${{ secrets.PROPERTIES }}" > ./demo/src/main/resources/application.properties
+          # 인증서 디코딩 주입
           echo -n "${{ secrets.TOSS_CERT_BASE64 }}" | base64 --decode > ./demo/src/main/resources/toss-cert.p12
 
       - name: Login to Docker Hub
@@ -64,9 +66,6 @@ jobs:
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
             cd ~/demo
-            # [삭제] EC2에 직접 파일을 생성하던 로직은 삭제합니다. 
-            # 이미 Docker 이미지 안에 파일이 포함되어 빌드되었습니다.
-
             docker-compose down
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
             docker-compose up -d

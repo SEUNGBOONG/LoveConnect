@@ -3,54 +3,42 @@ package com.example.demo.config.toss;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class TossDecryptor {
 
-    private static final String ALGORITHM = "AES/GCM/NoPadding";
-    private static final int TAG_LENGTH_BIT = 128;
-    private static final int IV_LENGTH_BYTE = 12;
+    public String decrypt(String encryptedText, String base64EncodedAesKey, String aad) throws Exception {
+        // 1. 상수 정의 (토스 명세: IV 12바이트, Tag 128비트)
+        final int IV_LENGTH = 12;
+        final int TAG_BIT_LENGTH = 128;
 
-    public static String decrypt(String encryptedBase64, String keyBase64, String aad) {
-        try {
-            // Secret 자체에 포함되었을지 모를 공백/줄바꿈 제거
-            String cleanKey = keyBase64.trim();
-            String cleanAad = aad.trim();
+        // 2. Base64 디코딩 (입력값 정제 포함)
+        byte[] decodedData = Base64.getDecoder().decode(encryptedText.trim());
+        byte[] keyByteArray = Base64.getDecoder().decode(base64EncodedAesKey.trim());
 
-            byte[] decoded = Base64.getDecoder().decode(encryptedBase64);
-            ByteBuffer buffer = ByteBuffer.wrap(decoded);
+        // 3. IV 추출 (데이터의 앞 12바이트)
+        byte[] iv = new byte[IV_LENGTH];
+        System.arraycopy(decodedData, 0, iv, 0, IV_LENGTH);
 
-            // 1. IV 추출
-            byte[] iv = new byte[IV_LENGTH_BYTE];
-            buffer.get(iv);
+        // 4. Cipher 초기화
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec keySpec = new SecretKeySpec(keyByteArray, "AES");
 
-            // 2. CipherText + Tag 분리
-            byte[] cipherAndTag = new byte[buffer.remaining()];
-            buffer.get(cipherAndTag);
+        // [핵심] 여기서 128(bit)이 정확히 들어가야 Tag mismatch가 안 납니다.
+        GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_BIT_LENGTH, iv);
 
-            // 3. Cipher 초기화
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
 
-            SecretKeySpec keySpec = new SecretKeySpec(
-                    Base64.getDecoder().decode(cleanKey),
-                    "AES"
-            );
-
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(TAG_LENGTH_BIT, iv);
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
-
-            // 4. AAD 설정
-            cipher.updateAAD(cleanAad.getBytes(StandardCharsets.UTF_8));
-
-            // 5. 복호화 실행
-            byte[] decrypted = cipher.doFinal(cipherAndTag);
-            return new String(decrypted, StandardCharsets.UTF_8);
-
-        } catch (Exception e) {
-            // 에러 발생 시 로그 확인을 위해 원인 포함
-            throw new IllegalStateException("토스 개인정보 복호화 실패: " + e.getMessage(), e);
+        // 5. AAD 설정 (UTF-8 명시)
+        if (aad != null) {
+            cipher.updateAAD(aad.getBytes(StandardCharsets.UTF_8));
         }
+
+        // 6. 복호화 실행 (IV 이후의 데이터 전체를 넘김)
+        // 토스 예제 방식: cipher.doFinal(원본, 시작지점, 길이)
+        byte[] decrypted = cipher.doFinal(decodedData, IV_LENGTH, decodedData.length - IV_LENGTH);
+
+        return new String(decrypted, StandardCharsets.UTF_8);
     }
 }
