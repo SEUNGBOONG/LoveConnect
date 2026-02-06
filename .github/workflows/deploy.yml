@@ -10,13 +10,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # [수정] PROPERTIES와 인증서를 빌드 시점에 이미지 내부로 주입
       - name: Create Resources and Config Files
         run: |
+          # Dockerfile이 ./demo 안에 있으므로, 모든 리소스도 그 하위에 생성
           mkdir -p ./demo/src/main/resources
-          # printf를 사용해 시크릿 값의 원본 그대로를 파일로 저장
           printf "%s" "${{ secrets.PROPERTIES }}" > ./demo/src/main/resources/application.properties
-          # 인증서 디코딩 주입
           echo -n "${{ secrets.TOSS_CERT_BASE64 }}" | base64 --decode > ./demo/src/main/resources/toss-cert.p12
 
       - name: Login to Docker Hub
