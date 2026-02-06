@@ -12,16 +12,9 @@ jobs:
 
       - name: Create Resources and Config Files
         run: |
-          # [핵심] demo 폴더 내부에 resources 경로를 강제로 생성
           mkdir -p demo/src/main/resources
-          
-          # application.properties 생성
           printf "%s" "${{ secrets.PROPERTIES }}" > demo/src/main/resources/application.properties
-          
-          # 토스 인증서 생성
           echo -n "${{ secrets.TOSS_CERT_BASE64 }}" | base64 --decode > demo/src/main/resources/toss-cert.p12
-          
-          # 파일이 제대로 들어갔는지 확인 (로그 확인용)
           ls -R demo/src/main/resources
 
       - name: Login to Docker Hub
@@ -33,15 +26,52 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
-          # context를 ./demo로 잡으면 Docker는 demo 폴더 안을 루트로 인식합니다.
           context: ./demo
-          # context 내부에서의 Dockerfile 위치 지정
           file: ./demo/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
 
+      # 배포 단계에서 쓰기 위해 docker-compose.yml을 업로드 (경로: ./demo/)
       - name: Upload docker-compose.yml
         uses: actions/upload-artifact@v4
         with:
           name: docker-compose-file
           path: ./demo/docker-compose.yml
+
+  # [여기가 빠졌었습니다!] EC2 실전 배포 단계
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download docker-compose.yml
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-compose-file
+          path: ./
+
+      - name: Upload docker-compose.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          source: "./docker-compose.yml"
+          target: /home/${{ secrets.EC2_USERNAME }}/demo
+
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            # EC2 내부 경로로 이동
+            cd ~/demo
+            # 기존 컨테이너 중지 및 삭제
+            docker-compose down
+            # 새 이미지 가져오기 (DOCKERHUB_USERNAME은 시크릿에서 참조)
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/loveconnect:latest
+            # 다시 실행
+            docker-compose up -d
+            # 쓰지 않는 이미지 정리 (용량 관리)
+            docker image prune -a -f
