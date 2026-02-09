@@ -113,8 +113,7 @@ public class TossAuthService {
                 request.nickname(),
                 request.instagramId(),
                 request.tiktokId(),
-                request.mbti(),
-                request.emailAgree()
+                request.mbti()
         );
     }
 

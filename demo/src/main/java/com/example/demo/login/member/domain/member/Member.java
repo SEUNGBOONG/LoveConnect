@@ -85,8 +85,7 @@ public class Member {
             String nickname,
             String instagramId,
             String tiktokId,
-            String mbti,
-            Boolean emailAgree
+            String mbti
     ) {
         if (nickname != null) {
             this.memberNickName = nickname;
@@ -96,10 +95,6 @@ public class Member {
 
         if (mbti != null) {
             this.mbti = mbti;
-        }
-
-        if (emailAgree != null) {
-            this.emailAgree = emailAgree;
         }
     }
 

@@ -15,19 +15,10 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(List.of(
-                "https://lovereconnect.co.kr",
-                "https://www.lovereconnect.co.kr",
-                "https://api.lovereconnect.co.kr",
-                "https://*.tossmini.com",
-                "http://localhost:3000",
-                "https://localhost:3000",
-                "http://localhost:5173"
-        ));
-
+        // 모든 Origin 허용 + Credentials 허용
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        // Header에 필요한 값들 명시 (Authorization 필수)
-        config.setAllowedHeaders(List.of("Origin", "Content-Type", "Accept", "Authorization", "Cookie"));
+        config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 

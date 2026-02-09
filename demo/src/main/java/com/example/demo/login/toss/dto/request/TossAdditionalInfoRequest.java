@@ -4,6 +4,5 @@ public record TossAdditionalInfoRequest(
         String nickname,
         String instagramId,
         String mbti,
-        String tiktokId, // 선택사항
-        Boolean emailAgree
+        String tiktokId// 선택사항
 ) {}

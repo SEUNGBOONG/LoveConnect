@@ -33,10 +33,12 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        if (path.startsWith("/auth/")
-                || path.startsWith("/phone/")
-                || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs")) {
+        // Swagger, OPTIONS, 인증 없는 경로는 무조건 통과
+        if (request.getMethod().equalsIgnoreCase("OPTIONS")
+                || path.startsWith("/swagger")
+                || path.startsWith("/v3")
+                || path.startsWith("/auth/")
+                || path.startsWith("/phone/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -59,13 +61,14 @@ public class JwtCookieFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(memberId, null, List.of())
                 );
             } catch (Exception e) {
+                log.warn("[JwtCookieFilter] 인증 실패: {}", e.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }
 
-        // 🔥 여기서 절대 response.setStatus / return 하지 말 것
         filterChain.doFilter(request, response);
     }
+
     private String extractTokenFromCookie(HttpServletRequest request) {
         if (request.getCookies() == null) return null;
 
