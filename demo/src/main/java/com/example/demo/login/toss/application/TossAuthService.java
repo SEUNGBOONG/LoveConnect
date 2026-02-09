@@ -109,7 +109,7 @@ public class TossAuthService {
     @Transactional
     public void updateMemberProfile(Long memberId, TossAdditionalInfoRequest request) {
         Member member = memberRepository.findById(memberId).orElseThrow();
-        member.updateProfile(
+        member.updateTossProfile(
                 request.nickname(),
                 request.instagramId(),
                 request.tiktokId(),

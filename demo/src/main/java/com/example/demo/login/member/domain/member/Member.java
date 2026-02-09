@@ -85,7 +85,8 @@ public class Member {
             String nickname,
             String instagramId,
             String tiktokId,
-            String mbti
+            String mbti,
+            Boolean emailAgree
     ) {
         if (nickname != null) {
             this.memberNickName = nickname;
@@ -95,6 +96,10 @@ public class Member {
 
         if (mbti != null) {
             this.mbti = mbti;
+        }
+
+        if (emailAgree != null) {
+            this.emailAgree = emailAgree;
         }
     }
 
@@ -107,10 +112,24 @@ public class Member {
         this.memberPassword = newEncodedPassword;
     }
 
-    public void updatePassword(String newPassword) {
-        this.memberPassword = newPassword;
-    }
+    public void updateTossProfile(
+            String nickname,
+            String instagramId,
+            String tiktokId,
+            String mbti
+    ) {
+        if (nickname != null && !nickname.isBlank()) {
+            this.memberNickName = nickname;
+        }
 
+        // null 허용 — 입력값 그대로 반영
+        this.instagramId = instagramId;
+        this.tiktokId = tiktokId;
+
+        if (mbti != null) {
+            this.mbti = mbti;
+        }
+    }
     public void setTossCi(String tossCi) {
         this.tossCi = tossCi;
     }
