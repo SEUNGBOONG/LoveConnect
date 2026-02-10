@@ -31,8 +31,13 @@ public class Member {
     @Column(nullable = false)
     private String phoneNumber;
 
+    @Column
     private String instagramId;
+
+    @Column
     private String tiktokId;
+
+    @Column
     private String mbti;
 
     @Column(nullable = false)
@@ -50,7 +55,6 @@ public class Member {
     @Column(nullable = false)
     private boolean useAgree;
 
-    @Builder.Default
     @Column(nullable = false)
     private boolean isDeleted = false;
 
@@ -110,10 +114,8 @@ public class Member {
         if (nickname != null && !nickname.isBlank()) {
             this.memberNickName = nickname;
         }
-
         this.instagramId = instagramId;
         this.tiktokId = tiktokId;
-
         if (mbti != null) {
             this.mbti = mbti;
         }
@@ -125,5 +127,14 @@ public class Member {
 
     public void setUserKey(Long userKey) {
         this.userKey = userKey;
+    }
+
+    // 추가로 필요 시 getter 메서드도 명시 가능
+    public String getGender() {
+        return gender;
+    }
+
+    public String getBirthDate() {
+        return birthDate;
     }
 }
