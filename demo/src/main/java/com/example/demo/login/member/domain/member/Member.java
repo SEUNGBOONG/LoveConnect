@@ -36,14 +36,32 @@ public class Member {
     private String mbti;
 
     @Column(nullable = false)
+    private String birthDate;
+
+    @Column(nullable = false)
+    private String gender;
+
+    @Column(nullable = false)
     private boolean emailAgree;
 
     @Column(nullable = false)
+    private boolean privacyAgree;
+
+    @Column(nullable = false)
+    private boolean useAgree;
+
+    @Builder.Default
+    @Column(nullable = false)
     private boolean isDeleted = false;
 
-    private LocalDateTime withdrawnAt;
+    @Column(name = "toss_ci", unique = true)
+    private String tossCi;
 
-    /* ===================== 탈퇴 ===================== */
+    @Column(unique = true)
+    private Long userKey;
+
+    @Column
+    private LocalDateTime withdrawnAt;
 
     public void withdraw() {
         this.isDeleted = true;
@@ -56,7 +74,9 @@ public class Member {
         this.memberNickName = "탈퇴한 회원";
     }
 
-    /* ===================== 프로필 ===================== */
+    public void updateTiktokId(String encryptedTiktokId) {
+        this.tiktokId = encryptedTiktokId;
+    }
 
     public void updateProfile(
             String nickname,
@@ -70,5 +90,40 @@ public class Member {
         this.tiktokId = tiktokId;
         if (mbti != null) this.mbti = mbti;
         if (emailAgree != null) this.emailAgree = emailAgree;
+    }
+
+    public void disconnectToss() {
+        this.tossCi = null;
+        this.userKey = null;
+    }
+
+    public void changePassword(String newEncodedPassword) {
+        this.memberPassword = newEncodedPassword;
+    }
+
+    public void updateTossProfile(
+            String nickname,
+            String instagramId,
+            String tiktokId,
+            String mbti
+    ) {
+        if (nickname != null && !nickname.isBlank()) {
+            this.memberNickName = nickname;
+        }
+
+        this.instagramId = instagramId;
+        this.tiktokId = tiktokId;
+
+        if (mbti != null) {
+            this.mbti = mbti;
+        }
+    }
+
+    public void setTossCi(String tossCi) {
+        this.tossCi = tossCi;
+    }
+
+    public void setUserKey(Long userKey) {
+        this.userKey = userKey;
     }
 }
