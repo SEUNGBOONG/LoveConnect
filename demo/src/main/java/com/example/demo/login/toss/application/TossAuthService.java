@@ -98,10 +98,17 @@ public class TossAuthService {
                         .memberName(name)
                         .phoneNumber(encryptedPhone)
                         .birthDate(birthday)
-                        .gender(gender) // 👈 추가
-                        .emailAgree(true) // 👈 추가
-                        .privacyAgree(true) // 👈 추가
-                        .useAgree(true) // 👈 추가
+                        .gender(gender)
+
+                        // 🔥 NOT NULL 방어용
+                        .instagramId("")
+                        .tiktokId("")
+                        .mbti("")
+
+                        .emailAgree(true)
+                        .privacyAgree(true)
+                        .useAgree(true)
+
                         .memberEmail(cleanPhone + "@toss.user")
                         .memberNickName("토스_" + UUID.randomUUID().toString().substring(0, 6))
                         .memberPassword(UUID.randomUUID().toString())
