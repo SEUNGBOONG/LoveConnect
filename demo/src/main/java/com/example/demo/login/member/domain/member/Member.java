@@ -31,7 +31,7 @@ public class Member {
     @Column(nullable = false)
     private String phoneNumber;
 
-    @Column
+    @Column(nullable = false)
     private String instagramId;
 
     @Column
