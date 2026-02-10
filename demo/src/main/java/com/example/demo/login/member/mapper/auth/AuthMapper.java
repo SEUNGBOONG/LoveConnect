@@ -14,14 +14,18 @@ public class AuthMapper {
                 member.getMemberEmail(),
                 member.getMemberName(),
                 member.getMemberNickName(),
-                AESUtil.decrypt(member.getPhoneNumber()),
-                AESUtil.decrypt(member.getInstagramId()),
-                AESUtil.decrypt(member.getTiktokId()), // null이면 null 반환
+                decryptNullable(member.getPhoneNumber()),
+                decryptNullable(member.getInstagramId()),
+                decryptNullable(member.getTiktokId()),
                 member.getMbti(),
                 member.getGender(),
                 member.getBirthDate(),
                 member.isEmailAgree()
         );
+    }
+
+    private static String decryptNullable(String value) {
+        return value == null ? null : AESUtil.decrypt(value);
     }
 
     public static Member toNormalMember(NormalSignUpRequest request, String encodedPassword) {
