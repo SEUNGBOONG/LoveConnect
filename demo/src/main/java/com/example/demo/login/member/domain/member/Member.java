@@ -77,9 +77,9 @@ public class Member {
         this.memberEmail = "deleted" + suffix + "@user.com";
         this.memberNickName = "탈퇴한회원" + suffix;
         this.phoneNumber = "deleted" + suffix;
-        this.instagramId = null;
-        this.tiktokId = null;
-        this.memberPassword = null;
+        this.instagramId = "deleted" + suffix;
+        this.tiktokId = "deleted" + suffix;
+        this.memberPassword = "WITHDRAWN_USER_PASSWORD";
 
         this.tossCi = null;
         this.userKey = null;
