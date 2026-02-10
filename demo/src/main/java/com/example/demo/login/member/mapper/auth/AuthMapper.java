@@ -14,9 +14,9 @@ public class AuthMapper {
                 member.getMemberEmail(),
                 member.getMemberName(),
                 member.getMemberNickName(),
-                decryptNullable(member.getPhoneNumber()),
-                decryptNullable(member.getInstagramId()),
-                decryptNullable(member.getTiktokId()),
+                AESUtil.decrypt(member.getPhoneNumber()),
+                AESUtil.decrypt(member.getInstagramId()),
+                AESUtil.decrypt(member.getTiktokId()),
                 member.getMbti(),
                 member.getGender(),
                 member.getBirthDate(),
@@ -24,9 +24,6 @@ public class AuthMapper {
         );
     }
 
-    private static String decryptNullable(String value) {
-        return value == null ? null : AESUtil.decrypt(value);
-    }
 
     public static Member toNormalMember(NormalSignUpRequest request, String encodedPassword) {
         String birthDate = request.birthYear().substring(2)
@@ -39,8 +36,6 @@ public class AuthMapper {
                 .memberPassword(encodedPassword)
                 .memberNickName(request.nickname())
                 .phoneNumber(AESUtil.encrypt(request.phoneNumber()))
-
-                // ✅ null 허용 + 있을 때만 암호화
                 .instagramId(request.instagramId())
                 .tiktokId(request.tiktokId())
                 .mbti(request.mbti())
