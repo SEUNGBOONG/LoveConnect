@@ -41,17 +41,8 @@ public class AuthMapper {
                 .phoneNumber(AESUtil.encrypt(request.phoneNumber()))
 
                 // ✅ null 허용 + 있을 때만 암호화
-                .instagramId(
-                        request.instagramId() == null
-                                ? null
-                                : AESUtil.encrypt(request.instagramId())
-                )
-                .tiktokId(
-                        request.tiktokId() == null
-                                ? null
-                                : AESUtil.encrypt(request.tiktokId().trim().toLowerCase())
-                )
-
+                .instagramId(request.instagramId())
+                .tiktokId(request.tiktokId())
                 .mbti(request.mbti())
                 .birthDate(birthDate)
                 .gender(request.gender())
