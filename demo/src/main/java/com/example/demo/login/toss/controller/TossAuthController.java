@@ -47,13 +47,13 @@ public class TossAuthController {
 
         if (!isLocal) {
             jwtCookie.setSecure(true);
-            jwtCookie.setDomain(".lovereconnect.co.kr"); // 도메인 설정 (프론트와 일치해야 함)
+            jwtCookie.setDomain(".lovereconnect.co.kr");
         }
 
         response.addCookie(jwtCookie);
 
-        // ✅ 응답은 간단하게 성공만
-        return ResponseEntity.ok(Map.of("success", true));
+        // ✅ 이걸로 token, memberId 등 다 내려보냄
+        return ResponseEntity.ok(result);
     }
 
     @PatchMapping("/additional-info")
