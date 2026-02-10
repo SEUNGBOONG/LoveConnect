@@ -90,13 +90,18 @@ public class TossAuthService {
 
 // 2. 복호화 하기
         String birthday = TossDecryptor.decrypt(encryptedBirthday, decryptKey, decryptAad);
-
+        String encryptedGender = (String) user.get("gender");
+        String gender = TossDecryptor.decrypt(encryptedGender, decryptKey, decryptAad);
 // 3. Member 저장 시 빌더에 추가
         Member member = optional.orElseGet(() -> memberRepository.save(
                 Member.builder()
                         .memberName(name)
                         .phoneNumber(encryptedPhone)
-                        .birthDate(birthday) // <--- 여기서 birthday를 넣어주세요!
+                        .birthDate(birthday)
+                        .gender(gender) // 👈 추가
+                        .emailAgree(true) // 👈 추가
+                        .privacyAgree(true) // 👈 추가
+                        .useAgree(true) // 👈 추가
                         .memberEmail(cleanPhone + "@toss.user")
                         .memberNickName("토스_" + UUID.randomUUID().toString().substring(0, 6))
                         .memberPassword(UUID.randomUUID().toString())
