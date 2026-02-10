@@ -1,15 +1,16 @@
+// 생략된 import 포함 전부 포함
 package com.example.demo.login.member.service.auth;
 
 import com.example.demo.common.util.AESUtil;
 import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
 import com.example.demo.login.global.exception.exceptions.CustomException;
-import com.example.demo.login.member.controller.auth.dto.LoginRequest;
-import com.example.demo.login.member.controller.auth.dto.MemberUpdateRequest;
+import com.example.demo.login.member.controller.auth.dto.*;
 import com.example.demo.login.member.domain.auth.EmailValidator;
 import com.example.demo.login.member.domain.auth.SignUpValidator;
 import com.example.demo.login.member.domain.member.Member;
 import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
 import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
+import com.example.demo.login.member.mapper.auth.AuthMapper;
 import com.example.demo.login.util.AuthValidator;
 import com.example.demo.match.domain.MatchRequestRepository;
 import com.example.demo.match.domain.TiktokMatchRequestRepository;
@@ -32,30 +33,40 @@ public class AuthService {
     private final MatchRequestRepository matchRequestRepository;
     private final TiktokMatchRequestRepository tiktokMatchRequestRepository;
 
-    /* ===================== 조회 ===================== */
+    public Member normalSignUp(NormalSignUpRequest request) {
+        if (!phoneAuthService.isVerified(request.phoneNumber())) {
+            throw new CustomException(CustomErrorCode.PHONE_AUTH_REQUIRED);
+        }
+
+        emailValidator.validateEmailFormat(request.email());
+        signUpValidator.normalValidateSignupRequestFormat(request);
+
+        authValidator.checkDuplicateMemberNickName(request.nickname());
+        authValidator.checkDuplicateMemberEmail(request.email());
+        authValidator.checkDuplicatePhoneNumber(request.phoneNumber());
+
+        String encodedPassword = passwordEncoder.encode(request.password());
+        Member member = AuthMapper.toNormalMember(request, encodedPassword);
+
+        phoneAuthService.clearVerified(request.phoneNumber());
+        return memberJpaRepository.save(member);
+    }
 
     public Member getById(Long id) {
         Member member = memberJpaRepository.findById(id)
                 .orElseThrow(() -> new CustomException(CustomErrorCode.MEMBER_NOT_FOUND));
 
-        // 🔒 탈퇴 회원 차단 (조회/수정/로그인용)
         if (member.isDeleted()) {
             throw new CustomException(CustomErrorCode.MEMBER_WITHDRAWN);
         }
         return member;
     }
 
-    /* ===================== 탈퇴 ===================== */
-
     @Transactional
     public void withdrawMember(Long memberId) {
-        Member member = memberJpaRepository.findById(memberId)
-                .orElseThrow(() -> new CustomException(CustomErrorCode.MEMBER_NOT_FOUND));
+        Member member = getById(memberId);
 
-        // ✅ 이미 탈퇴된 경우 → 그냥 종료 (idempotent)
-        if (member.isDeleted()) {
-            return;
-        }
+        if (member.isDeleted()) return;
 
         matchRequestRepository.findByRequester(member)
                 .ifPresent(matchRequestRepository::delete);
@@ -65,8 +76,6 @@ public class AuthService {
 
         member.withdraw();
     }
-
-    /* ===================== 로그인 ===================== */
 
     @Transactional(readOnly = true)
     public Member loginAndReturnMember(LoginRequest request) {
@@ -85,8 +94,6 @@ public class AuthService {
         return member;
     }
 
-    /* ===================== 프로필 ===================== */
-
     @Transactional
     public void updateProfile(Long memberId, MemberUpdateRequest request) {
         Member member = getById(memberId);
@@ -96,11 +103,40 @@ public class AuthService {
 
         member.updateProfile(
                 request.nickname(),
-                instagramId == null || instagramId.isBlank() ? null : AESUtil.encrypt(instagramId),
-                tiktokId == null || tiktokId.isBlank() ? null : AESUtil.encrypt(tiktokId),
+                instagramId == null || instagramId.isBlank() ? null : AESUtil.encrypt(instagramId.trim().toLowerCase()),
+                tiktokId == null || tiktokId.isBlank() ? null : AESUtil.encrypt(tiktokId.trim().toLowerCase()),
                 request.mbti(),
                 request.emailAgree()
         );
+    }
+
+    @Transactional
+    public void resetPassword(PasswordResetRequest request) {
+        if (!phoneAuthService.isVerified(request.phoneNumber())) {
+            throw new CustomException(CustomErrorCode.PHONE_AUTH_REQUIRED);
+        }
+
+        String encryptedPhone = AESUtil.encrypt(request.phoneNumber());
+
+        Member member = memberJpaRepository.findByPhoneNumber(encryptedPhone)
+                .orElseThrow(() -> new CustomException(CustomErrorCode.MEMBER_NOT_FOUND));
+
+        String encodedPassword = passwordEncoder.encode(request.newPassword());
+        member.changePassword(encodedPassword);
+
+        phoneAuthService.clearVerified(request.phoneNumber());
+    }
+
+    @Transactional
+    public void registerTiktokId(Long memberId, String rawTiktokId) {
+        Member member = getById(memberId);
+
+        if (rawTiktokId == null || rawTiktokId.trim().isBlank()) {
+            member.updateTiktokId(null);
+            return;
+        }
+
+        member.updateTiktokId(AESUtil.encrypt(rawTiktokId.trim().toLowerCase()));
     }
 
     public String generateToken(Long memberId) {
