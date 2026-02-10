@@ -83,10 +83,20 @@ public class TossAuthService {
         Optional<Member> optional = memberRepository.findByPhoneNumber(encryptedPhone);
         boolean isNewMember = optional.isEmpty();
 
+        // ... 기존 코드 (name, phone 복호화 부분 아래에 추가)
+
+// 1. 토스 응답에서 암호화된 birthday 꺼내기
+        String encryptedBirthday = (String) user.get("birthday");
+
+// 2. 복호화 하기
+        String birthday = TossDecryptor.decrypt(encryptedBirthday, decryptKey, decryptAad);
+
+// 3. Member 저장 시 빌더에 추가
         Member member = optional.orElseGet(() -> memberRepository.save(
                 Member.builder()
                         .memberName(name)
                         .phoneNumber(encryptedPhone)
+                        .birthDate(birthday) // <--- 여기서 birthday를 넣어주세요!
                         .memberEmail(cleanPhone + "@toss.user")
                         .memberNickName("토스_" + UUID.randomUUID().toString().substring(0, 6))
                         .memberPassword(UUID.randomUUID().toString())
