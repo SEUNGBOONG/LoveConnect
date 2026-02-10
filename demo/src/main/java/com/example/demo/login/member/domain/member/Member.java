@@ -71,11 +71,18 @@ public class Member {
         this.isDeleted = true;
         this.withdrawnAt = LocalDateTime.now();
 
-        this.memberPassword = null;
-        this.phoneNumber = null;
+        // 고유값 기반으로 유니크 회피
+        String suffix = "_deleted_" + this.id;
+
+        this.memberEmail = "deleted" + suffix + "@user.com";
+        this.memberNickName = "탈퇴한회원" + suffix;
+        this.phoneNumber = "deleted" + suffix;
         this.instagramId = null;
         this.tiktokId = null;
-        this.memberNickName = "탈퇴한 회원";
+        this.memberPassword = null;
+
+        this.tossCi = null;
+        this.userKey = null;
     }
 
     public void updateTiktokId(String encryptedTiktokId) {
