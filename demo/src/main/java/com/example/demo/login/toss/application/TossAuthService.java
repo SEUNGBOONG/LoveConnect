@@ -37,18 +37,24 @@ public class TossAuthService {
     private String decryptAad;
 
     @Transactional
-    // [수정] throws Exception 추가하여 복호화 시 발생하는 예외를 상위로 던집니다.
     public Map<String, Object> executeTossLogin(String authorizationCode, String referrer) throws Exception {
+
+        // ✅ 1. 토큰 발급
         String tokenUrl = baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/generate-token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        Map<String, String> body = Map.of("authorizationCode", authorizationCode, "referrer", referrer);
 
-        ResponseEntity<Map> tokenResponse = tossRestTemplate.postForEntity(
-                tokenUrl, new HttpEntity<>(body, headers), Map.class);
+        Map<String, String> body = Map.of(
+                "authorizationCode", authorizationCode,
+                "referrer", referrer
+        );
+
+        ResponseEntity<Map> tokenResponse =
+                tossRestTemplate.postForEntity(tokenUrl, new HttpEntity<>(body, headers), Map.class);
 
         Map tokenBody = tokenResponse.getBody();
+
         if (tokenBody == null || !(tokenBody.get("success") instanceof Map success)) {
             log.error("[TOSS] token issue failed: {}", tokenBody);
             throw new IllegalStateException("토스 토큰 발급 실패");
@@ -56,43 +62,45 @@ public class TossAuthService {
 
         String accessToken = (String) success.get("accessToken");
 
+        // ✅ 2. 사용자 정보 조회
         String infoUrl = baseUrl + "/api-partner/v1/apps-in-toss/user/oauth2/login-me";
 
         HttpHeaders authHeaders = new HttpHeaders();
         authHeaders.setBearerAuth(accessToken);
 
-        ResponseEntity<Map> infoResponse = tossRestTemplate.exchange(
-                infoUrl, HttpMethod.GET, new HttpEntity<>(authHeaders), Map.class);
+        ResponseEntity<Map> infoResponse =
+                tossRestTemplate.exchange(infoUrl, HttpMethod.GET, new HttpEntity<>(authHeaders), Map.class);
 
         Map infoBody = infoResponse.getBody();
+
         if (infoBody == null || !(infoBody.get("success") instanceof Map user)) {
             log.error("[TOSS] user info failed: {}", infoBody);
             throw new IllegalStateException("토스 사용자 정보 조회 실패");
         }
 
+        // ✅ 복호화
         String name = (String) user.get("name");
 
-        // [컴파일 에러 해결 지점]
-        String decryptedPhone = TossDecryptor.decrypt((String) user.get("phone"), decryptKey, decryptAad);
-        String ci = TossDecryptor.decrypt((String) user.get("ci"), decryptKey, decryptAad);
+        String decryptedPhone =
+                TossDecryptor.decrypt((String) user.get("phone"), decryptKey, decryptAad);
+
+        String ci =
+                TossDecryptor.decrypt((String) user.get("ci"), decryptKey, decryptAad);
+
         Long userKey = ((Number) user.get("userKey")).longValue();
+
+        String birthday =
+                TossDecryptor.decrypt((String) user.get("birthday"), decryptKey, decryptAad);
+
+        String gender =
+                TossDecryptor.decrypt((String) user.get("gender"), decryptKey, decryptAad);
 
         String cleanPhone = decryptedPhone.replaceAll("[^0-9]", "");
         String encryptedPhone = AESUtil.encrypt(cleanPhone);
 
+        // ✅ 3. 회원 조회 또는 생성
         Optional<Member> optional = memberRepository.findByPhoneNumber(encryptedPhone);
-        boolean isNewMember = optional.isEmpty();
 
-        // ... 기존 코드 (name, phone 복호화 부분 아래에 추가)
-
-// 1. 토스 응답에서 암호화된 birthday 꺼내기
-        String encryptedBirthday = (String) user.get("birthday");
-
-// 2. 복호화 하기
-        String birthday = TossDecryptor.decrypt(encryptedBirthday, decryptKey, decryptAad);
-        String encryptedGender = (String) user.get("gender");
-        String gender = TossDecryptor.decrypt(encryptedGender, decryptKey, decryptAad);
-// 3. Member 저장 시 빌더에 추가
         Member member = optional.orElseGet(() -> memberRepository.save(
                 Member.builder()
                         .memberName(name)
@@ -100,7 +108,7 @@ public class TossAuthService {
                         .birthDate(birthday)
                         .gender(gender)
 
-                        // 🔥 NOT NULL 방어용
+                        // 🔥 NOT NULL 방어
                         .instagramId("")
                         .tiktokId("")
                         .mbti("")
@@ -118,6 +126,9 @@ public class TossAuthService {
         member.setTossCi(ci);
         member.setUserKey(userKey);
 
+        // 🔥🔥🔥 핵심 로직 (여기가 문제였음)
+        boolean isNewMember = isAdditionalInfoMissing(member);
+
         String jwt = jwtTokenProvider.createToken(member.getId());
 
         return Map.of(
@@ -128,9 +139,22 @@ public class TossAuthService {
         );
     }
 
+    /**
+     ✅ 추가정보 입력 여부 판단
+     */
+    private boolean isAdditionalInfoMissing(Member member) {
+
+        return member.getInstagramId() == null
+                || member.getInstagramId().isBlank()
+                || member.getMbti() == null
+                || member.getMbti().isBlank();
+    }
+
     @Transactional
     public void updateMemberProfile(Long memberId, TossAdditionalInfoRequest request) {
+
         Member member = memberRepository.findById(memberId).orElseThrow();
+
         member.updateTossProfile(
                 request.nickname(),
                 request.instagramId(),
@@ -141,8 +165,10 @@ public class TossAuthService {
 
     @Transactional
     public void disconnectByUserKey(Long userKey) {
+
         Member member = memberRepository.findByUserKey(userKey)
                 .orElseThrow(() -> new IllegalArgumentException("해당 userKey로 등록된 사용자가 없습니다."));
+
         member.disconnectToss();
     }
 }
