@@ -60,7 +60,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getAllPaged(Long memberId, Pageable pageable) {
-        return postRepository.findAll(pageable)
+        return postRepository.findAllWithWriter(pageable)
                 .map(post -> toResponse(post, memberId));
     }
 

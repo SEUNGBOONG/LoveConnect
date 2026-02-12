@@ -30,7 +30,21 @@ public class PostQueryRepositoryImpl implements PostQueryRepository {
                 .stream()
                 .findFirst();
     }
+    @Override
+    public Page<Post> findAllWithWriter(Pageable pageable) {
+        String jpql = "select p from Post p join fetch p.writer";
+        String countJpql = "select count(p) from Post p";
 
+        List<Post> content = em.createQuery(jpql + " order by p.createdAt desc", Post.class)
+                .setFirstResult((int) pageable.getOffset())
+                .setMaxResults(pageable.getPageSize())
+                .getResultList();
+
+        Long count = em.createQuery(countJpql, Long.class)
+                .getSingleResult();
+
+        return new PageImpl<>(content, pageable, count);
+    }
     // ✅ findAllWithWriters() 제거
 
     /** ✅ 게시글 검색 쿼리 구현 */
