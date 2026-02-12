@@ -27,7 +27,14 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getAllPaged(Long memberId, Pageable pageable) {
+        // fetch join이 적용된 쿼리 레포지토리 메서드 호출
         return postRepository.findAllWithWriter(pageable)
+                .map(post -> toResponse(post, memberId));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PostResponse> search(PostSearchCondition condition, Long memberId, Pageable pageable) {
+        return postRepository.searchPosts(condition, pageable)
                 .map(post -> toResponse(post, memberId));
     }
 
@@ -50,24 +57,14 @@ public class PostService {
     public void delete(Long memberId, Long postId) {
         Post post = getPostWithWriter(postId);
         validateWriter(post, memberId);
-
-        // 🔥 먼저 댓글 삭제
         commentRepository.deleteAllByPostId(postId);
-
         postRepository.delete(post);
     }
 
-    /** ✅ 상세조회 (isMine 필요) */
     @Transactional(readOnly = true)
     public PostResponse getById(Long memberId, Long postId) {
         Post post = getPostWithWriter(postId);
         return toResponse(post, memberId);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PostResponse> search(PostSearchCondition condition, Long memberId, Pageable pageable) {
-        return postRepository.searchPosts(condition, pageable)
-                .map(post -> toResponse(post, memberId));
     }
 
     private Post getPostWithWriter(Long id) {
@@ -77,7 +74,7 @@ public class PostService {
 
     private void validateWriter(Post post, Long memberId) {
         if (!post.getWriter().getId().equals(memberId)) {
-            throw new CustomException(CustomErrorCode.POST_UNAUTHORIZED); // 수정된 메시지로 변경
+            throw new CustomException(CustomErrorCode.POST_UNAUTHORIZED);
         }
     }
 
@@ -92,8 +89,8 @@ public class PostService {
                 post.getTitle(),
                 post.getContent(),
                 post.getWriter().getMemberNickName(),
-                post.getWriter().getId().equals(memberId), // ✅ isMine
-                post.getCreatedAt()                        // ✅ createdAt
+                post.getWriter().getId().equals(memberId),
+                post.getCreatedAt()
         );
     }
 }

@@ -9,21 +9,11 @@ import com.example.demo.community.post.dto.response.PostResponse;
 import com.example.demo.community.post.service.PostService;
 import com.example.demo.login.global.annotation.Member;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/posts")
@@ -32,69 +22,44 @@ public class PostController {
 
     private final PostService postService;
 
-    /** ✅ 게시글 작성 */
     @PostMapping
-    public ResponseEntity<ApiResponse<PostResponse>> create(
-            @Member Long memberId,
-            @RequestBody PostCreateRequest request
-    ) {
+    public ResponseEntity<ApiResponse<PostResponse>> create(@Member Long memberId, @RequestBody PostCreateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(postService.create(memberId, request)));
     }
 
-    /** ✅ 게시글 수정 */
     @PutMapping("/{postId}")
-    public ResponseEntity<ApiResponse<PostResponse>> update(
-            @Member Long memberId,
-            @PathVariable Long postId,
-            @RequestBody PostUpdateRequest request
-    ) {
+    public ResponseEntity<ApiResponse<PostResponse>> update(@Member Long memberId, @PathVariable Long postId, @RequestBody PostUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(postService.update(memberId, postId, request)));
     }
 
-    /** ✅ 게시글 삭제 */
     @DeleteMapping("/{postId}")
-    public ResponseEntity<ApiResponse<Void>> delete(
-            @Member Long memberId,
-            @PathVariable Long postId
-    ) {
+    public ResponseEntity<ApiResponse<Void>> delete(@Member Long memberId, @PathVariable Long postId) {
         postService.delete(memberId, postId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /** ✅ 게시글 상세조회 */
     @GetMapping("/{postId}")
-    public ResponseEntity<ApiResponse<PostResponse>> get(
-            @Member Long memberId,
-            @PathVariable Long postId
-    ) {
+    public ResponseEntity<ApiResponse<PostResponse>> get(@Member Long memberId, @PathVariable Long postId) {
         return ResponseEntity.ok(ApiResponse.success(postService.getById(memberId, postId)));
     }
 
+    /** ✅ 전체 페이징 조회 */
     @GetMapping("/paged")
     public ResponseEntity<ApiResponse<PostPageResponse>> getAllPaged(
             @Member Long memberId,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        var page = postService.getAllPaged(memberId, pageable);
-        return ResponseEntity.ok(ApiResponse.success(PostPageResponse.from(page)));
+        return ResponseEntity.ok(ApiResponse.success(PostPageResponse.from(postService.getAllPaged(memberId, pageable))));
     }
 
-    /** ✅ 검색 */
+    /** ✅ 검색 페이징 조회 */
     @GetMapping("/search")
-    public ResponseEntity<ApiResponse<Page<PostResponse>>> search(
+    public ResponseEntity<ApiResponse<PostPageResponse>> search(
             @ModelAttribute PostSearchCondition condition,
             @Member Long memberId,
-            Pageable pageable
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-
-        Pageable fixedPageable = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, "createdAt")
-        );
-
-        return ResponseEntity.ok(
-                ApiResponse.success(postService.search(condition, memberId, fixedPageable))
-        );
+        // service에서 이미 PostResponse로 변환해서 오므로 바로 PostPageResponse.from 사용
+        return ResponseEntity.ok(ApiResponse.success(PostPageResponse.from(postService.search(condition, memberId, pageable))));
     }
 }
