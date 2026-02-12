@@ -1,14 +1,28 @@
 package com.example.demo.community.post.controller;
 
 import com.example.demo.common.exception.ApiResponse;
-import com.example.demo.community.post.dto.request.*;
+import com.example.demo.community.post.dto.request.PostCreateRequest;
+import com.example.demo.community.post.dto.request.PostSearchCondition;
+import com.example.demo.community.post.dto.request.PostUpdateRequest;
+import com.example.demo.community.post.dto.response.PostPageResponse;
 import com.example.demo.community.post.dto.response.PostResponse;
 import com.example.demo.community.post.service.PostService;
 import com.example.demo.login.global.annotation.Member;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/posts")
@@ -55,26 +69,21 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(postService.getById(memberId, postId)));
     }
 
-    /**
-     🔥🔥🔥 핵심 수정 포인트
-     👉 프론트 sort 무시하고 서버에서 강제 정렬
-     */
     @GetMapping("/paged")
-    public ResponseEntity<ApiResponse<Page<PostResponse>>> getAllPaged(
+    public ResponseEntity<ApiResponse<PostPageResponse>> getAllPaged(
+
             @Member Long memberId,
             Pageable pageable
     ) {
-
-        // ✅ 무조건 createdAt DESC 강제
         Pageable fixedPageable = PageRequest.of(
                 pageable.getPageNumber(),
                 pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        return ResponseEntity.ok(
-                ApiResponse.success(postService.getAllPaged(memberId, fixedPageable))
-        );
+        var page = postService.getAllPaged(memberId, fixedPageable);
+
+        return ResponseEntity.ok(ApiResponse.success(PostPageResponse.from(page)));
     }
 
     /** ✅ 검색 */
