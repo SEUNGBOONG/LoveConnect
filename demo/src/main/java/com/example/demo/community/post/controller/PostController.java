@@ -43,7 +43,9 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(postService.getById(memberId, postId)));
     }
 
-    /** ✅ 전체 페이징 조회 */
+    /** * ✅ 전체 페이징 조회
+     * 클라이언트 호출 예시: /posts/paged?page=0&size=10
+     */
     @GetMapping("/paged")
     public ResponseEntity<ApiResponse<PostPageResponse>> getAllPaged(
             @Member Long memberId,
@@ -59,7 +61,6 @@ public class PostController {
             @Member Long memberId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        // service에서 이미 PostResponse로 변환해서 오므로 바로 PostPageResponse.from 사용
         return ResponseEntity.ok(ApiResponse.success(PostPageResponse.from(postService.search(condition, memberId, pageable))));
     }
 }
