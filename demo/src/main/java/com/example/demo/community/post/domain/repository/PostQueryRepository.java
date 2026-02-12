@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface PostQueryRepository {
     Optional<Post> findWithWriterById(Long postId);
     // ✅ findAllWithWriters() 제거 (PostController.getAll() 제거에 따라 사용처 없음)
-    Page<Post> findAllWithWriter(Pageable pageable);
     /** ✅ 게시글 검색 메서드 추가 */
+    Page<Post> findAllWithWriter(Pageable pageable);
     Page<Post> searchPosts(PostSearchCondition condition, Pageable pageable);
 }

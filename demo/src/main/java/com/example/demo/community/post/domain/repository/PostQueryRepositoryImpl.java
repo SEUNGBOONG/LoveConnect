@@ -21,21 +21,22 @@ public class PostQueryRepositoryImpl implements PostQueryRepository {
     @Override
     public Optional<Post> findWithWriterById(Long postId) {
         return em.createQuery("""
-                select p from Post p
-                join fetch p.writer
-                where p.id = :postId
-                """, Post.class)
+                        select p from Post p
+                        join fetch p.writer
+                        where p.id = :postId
+                        """, Post.class)
                 .setParameter("postId", postId)
                 .getResultList()
                 .stream()
                 .findFirst();
     }
+
     @Override
     public Page<Post> findAllWithWriter(Pageable pageable) {
-        String jpql = "select p from Post p join fetch p.writer";
+        String jpql = "select p from Post p join fetch p.writer order by p.createdAt desc";
         String countJpql = "select count(p) from Post p";
 
-        List<Post> content = em.createQuery(jpql + " order by p.createdAt desc", Post.class)
+        List<Post> content = em.createQuery(jpql, Post.class)
                 .setFirstResult((int) pageable.getOffset())
                 .setMaxResults(pageable.getPageSize())
                 .getResultList();

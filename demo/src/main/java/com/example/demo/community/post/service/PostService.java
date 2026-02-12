@@ -25,6 +25,12 @@ public class PostService {
     private final MemberJpaRepository memberJpaRepository;
     private final CommentRepository commentRepository;
 
+    @Transactional(readOnly = true)
+    public Page<PostResponse> getAllPaged(Long memberId, Pageable pageable) {
+        return postRepository.findAllWithWriter(pageable)
+                .map(post -> toResponse(post, memberId));
+    }
+
     @Transactional
     public PostResponse create(Long memberId, PostCreateRequest request) {
         Member writer = getMember(memberId);
@@ -56,12 +62,6 @@ public class PostService {
     public PostResponse getById(Long memberId, Long postId) {
         Post post = getPostWithWriter(postId);
         return toResponse(post, memberId);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<PostResponse> getAllPaged(Long memberId, Pageable pageable) {
-        return postRepository.findAll(pageable)
-                .map(post -> toResponse(post, memberId));
     }
 
     @Transactional(readOnly = true)
