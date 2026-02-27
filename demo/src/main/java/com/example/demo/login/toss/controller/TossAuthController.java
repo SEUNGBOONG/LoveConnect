@@ -56,6 +56,31 @@ public class TossAuthController {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * ✅ 토스 로그아웃
+     * - JWT 쿠키(token) 삭제만 수행 (서버 세션 없음)
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        Cookie logoutCookie = new Cookie("token", null);
+        logoutCookie.setPath("/");
+        logoutCookie.setMaxAge(0); // 즉시 만료
+
+        boolean isLocal =
+                request.getServerName().equals("localhost") || request.getServerName().equals("127.0.0.1");
+
+        if (!isLocal) {
+            logoutCookie.setSecure(true);
+            logoutCookie.setDomain(".lovereconnect.co.kr");
+        }
+
+        response.addCookie(logoutCookie);
+        return ResponseEntity.ok().build();
+    }
+
     @PatchMapping("/additional-info")
     public ResponseEntity<Void> additional(
             @Member Long memberId,
