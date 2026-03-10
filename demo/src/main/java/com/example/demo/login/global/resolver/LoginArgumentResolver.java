@@ -12,6 +12,8 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
+import static org.springframework.web.context.request.RequestAttributes.SCOPE_REQUEST;
+
 @Component
 public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
@@ -34,14 +36,28 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
         // 🔥 인증 자체가 안 된 경우
         if (authentication == null || authentication.getPrincipal() == null) {
-            throw new CustomException(CustomErrorCode.NOT_FIND_TOKEN);
+            throwTokenExceptionByContext(webRequest);
+        }
+
+        // 🔥 익명 사용자(토큰 없음)인 경우
+        if ("anonymousUser".equals(authentication.getPrincipal().toString())) {
+            throwTokenExceptionByContext(webRequest);
         }
 
         // 🔥 JwtCookieFilter에서 넣어준 memberId 사용
         try {
             return Long.parseLong(authentication.getPrincipal().toString());
         } catch (NumberFormatException e) {
+            // 숫자 principal이 아니면(비정상 인증), 토큰이 없거나 인증 실패로 본다.
+            throwTokenExceptionByContext(webRequest);
+        }
+    }
+
+    private void throwTokenExceptionByContext(NativeWebRequest webRequest) {
+        Object expired = webRequest.getAttribute("tokenExpired", SCOPE_REQUEST);
+        if (Boolean.TRUE.equals(expired)) {
             throw new CustomException(CustomErrorCode.EXPIRED_TOKEN);
         }
+        throw new CustomException(CustomErrorCode.NOT_FIND_TOKEN);
     }
 }

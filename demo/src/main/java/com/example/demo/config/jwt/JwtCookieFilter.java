@@ -1,6 +1,7 @@
 package com.example.demo.config.jwt;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -60,6 +61,11 @@ public class JwtCookieFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(memberId, null, List.of())
                 );
+            } catch (TokenExpiredException e) {
+                // 리졸버에서 "만료" vs "토큰 없음"을 구분할 수 있게 표시
+                request.setAttribute("tokenExpired", true);
+                log.warn("[JwtCookieFilter] 토큰 만료: {}", e.getMessage());
+                SecurityContextHolder.clearContext();
             } catch (Exception e) {
                 log.warn("[JwtCookieFilter] 인증 실패: {}", e.getMessage());
                 SecurityContextHolder.clearContext();
