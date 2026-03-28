@@ -50,6 +50,7 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
         } catch (NumberFormatException e) {
             // 숫자 principal이 아니면(비정상 인증), 토큰이 없거나 인증 실패로 본다.
             throwTokenExceptionByContext(webRequest);
+            throw new IllegalStateException("Unreachable");
         }
     }
 
