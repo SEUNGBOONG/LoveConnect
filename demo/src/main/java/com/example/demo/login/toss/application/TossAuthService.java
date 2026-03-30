@@ -12,8 +12,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,13 +48,20 @@ public class TossAuthService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        Map<String, String> body = Map.of(
-                "authorizationCode", authorizationCode,
-                "referrer", referrer
-        );
+        Map<String, String> body = new HashMap<>();
+        body.put("authorizationCode", authorizationCode);
+        if (StringUtils.hasText(referrer)) {
+            body.put("referrer", referrer);
+        }
 
-        ResponseEntity<Map> tokenResponse =
-                tossRestTemplate.postForEntity(tokenUrl, new HttpEntity<>(body, headers), Map.class);
+        ResponseEntity<Map> tokenResponse;
+        try {
+            tokenResponse =
+                    tossRestTemplate.postForEntity(tokenUrl, new HttpEntity<>(body, headers), Map.class);
+        } catch (HttpStatusCodeException e) {
+            log.error("[TOSS] token issue failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new IllegalStateException("토스 토큰 발급 실패");
+        }
 
         Map tokenBody = tokenResponse.getBody();
 
@@ -68,8 +78,14 @@ public class TossAuthService {
         HttpHeaders authHeaders = new HttpHeaders();
         authHeaders.setBearerAuth(accessToken);
 
-        ResponseEntity<Map> infoResponse =
-                tossRestTemplate.exchange(infoUrl, HttpMethod.GET, new HttpEntity<>(authHeaders), Map.class);
+        ResponseEntity<Map> infoResponse;
+        try {
+            infoResponse =
+                    tossRestTemplate.exchange(infoUrl, HttpMethod.GET, new HttpEntity<>(authHeaders), Map.class);
+        } catch (HttpStatusCodeException e) {
+            log.error("[TOSS] user info failed. status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new IllegalStateException("토스 사용자 정보 조회 실패");
+        }
 
         Map infoBody = infoResponse.getBody();
 

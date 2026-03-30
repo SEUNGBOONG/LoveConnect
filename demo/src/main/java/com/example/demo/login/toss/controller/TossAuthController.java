@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,6 +33,10 @@ public class TossAuthController {
 
         String authorizationCode = body.get("authorizationCode");
         String referrer = body.get("referrer");
+
+        if (!StringUtils.hasText(authorizationCode)) {
+            throw new IllegalArgumentException("authorizationCode is required");
+        }
 
         Map<String, Object> result = tossAuthService.executeTossLogin(authorizationCode, referrer);
         String token = (String) result.get("token");
