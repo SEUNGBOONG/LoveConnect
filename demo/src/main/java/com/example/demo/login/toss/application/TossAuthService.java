@@ -8,6 +8,7 @@ import com.example.demo.login.member.infrastructure.member.MemberJpaRepository;
 import com.example.demo.login.toss.dto.request.TossAdditionalInfoRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -115,32 +116,37 @@ public class TossAuthService {
         String encryptedPhone = AESUtil.encrypt(cleanPhone);
 
         // ✅ 3. 회원 조회 또는 생성
-        Optional<Member> optional = memberRepository.findByPhoneNumber(encryptedPhone);
+        Member member = resolveMember(ci, userKey, encryptedPhone)
+                .orElseGet(() -> memberRepository.save(
+                        Member.builder()
+                                .memberName(name)
+                                .phoneNumber(encryptedPhone)
+                                .birthDate(birthday)
+                                .gender(gender)
 
-        Member member = optional.orElseGet(() -> memberRepository.save(
-                Member.builder()
-                        .memberName(name)
-                        .phoneNumber(encryptedPhone)
-                        .birthDate(birthday)
-                        .gender(gender)
+                                // 🔥 NOT NULL 방어
+                                .instagramId("")
+                                .tiktokId("")
+                                .mbti("")
 
-                        // 🔥 NOT NULL 방어
-                        .instagramId("")
-                        .tiktokId("")
-                        .mbti("")
+                                .emailAgree(true)
+                                .privacyAgree(true)
+                                .useAgree(true)
 
-                        .emailAgree(true)
-                        .privacyAgree(true)
-                        .useAgree(true)
-
-                        .memberEmail(cleanPhone + "@toss.user")
-                        .memberNickName("토스_" + UUID.randomUUID().toString().substring(0, 6))
-                        .memberPassword(UUID.randomUUID().toString())
-                        .build()
-        ));
+                                .memberEmail(cleanPhone + "@toss.user")
+                                .memberNickName("토스_" + UUID.randomUUID().toString().substring(0, 6))
+                                .memberPassword(UUID.randomUUID().toString())
+                                .build()
+                ));
 
         member.setTossCi(ci);
         member.setUserKey(userKey);
+        try {
+            memberRepository.saveAndFlush(member);
+        } catch (DataIntegrityViolationException e) {
+            log.error("[TOSS] member upsert failed. phone={}, ci={}, userKey={}", encryptedPhone, ci, userKey, e);
+            throw new IllegalStateException("토스 회원 연동 중 충돌이 발생했습니다.");
+        }
 
         // 🔥🔥🔥 핵심 로직 (여기가 문제였음)
         boolean isNewMember = isAdditionalInfoMissing(member);
@@ -164,6 +170,24 @@ public class TossAuthService {
                 || member.getInstagramId().isBlank()
                 || member.getMbti() == null
                 || member.getMbti().isBlank();
+    }
+
+    private Optional<Member> resolveMember(String ci, Long userKey, String encryptedPhone) {
+        if (StringUtils.hasText(ci)) {
+            Optional<Member> byCi = memberRepository.findByTossCi(ci);
+            if (byCi.isPresent()) {
+                return byCi;
+            }
+        }
+
+        if (userKey != null) {
+            Optional<Member> byUserKey = memberRepository.findByUserKey(userKey);
+            if (byUserKey.isPresent()) {
+                return byUserKey;
+            }
+        }
+
+        return memberRepository.findByPhoneNumber(encryptedPhone);
     }
 
     @Transactional
