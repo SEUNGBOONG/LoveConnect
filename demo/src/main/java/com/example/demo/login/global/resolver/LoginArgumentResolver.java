@@ -33,14 +33,22 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
 
         Authentication authentication =
                 SecurityContextHolder.getContext().getAuthentication();
+        Member memberAnnotation = parameter.getParameterAnnotation(Member.class);
+        boolean required = memberAnnotation == null || memberAnnotation.required();
 
         // 🔥 인증 자체가 안 된 경우
         if (authentication == null || authentication.getPrincipal() == null) {
+            if (!required) {
+                return null;
+            }
             throwTokenExceptionByContext(webRequest);
         }
 
         // 🔥 익명 사용자(토큰 없음)인 경우
         if ("anonymousUser".equals(authentication.getPrincipal().toString())) {
+            if (!required) {
+                return null;
+            }
             throwTokenExceptionByContext(webRequest);
         }
 
@@ -49,6 +57,9 @@ public class LoginArgumentResolver implements HandlerMethodArgumentResolver {
             return Long.parseLong(authentication.getPrincipal().toString());
         } catch (NumberFormatException e) {
             // 숫자 principal이 아니면(비정상 인증), 토큰이 없거나 인증 실패로 본다.
+            if (!required) {
+                return null;
+            }
             throwTokenExceptionByContext(webRequest);
             throw new IllegalStateException("Unreachable");
         }

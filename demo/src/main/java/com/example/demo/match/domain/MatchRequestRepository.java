@@ -8,6 +8,7 @@ import java.util.Optional;
 public interface MatchRequestRepository extends JpaRepository<MatchRequest, Long> {
 
     Optional<MatchRequest> findByRequester(Member requester);
+    void deleteAllByRequesterOrMatchedMember(Member requester, Member matchedMember);
 
     Optional<MatchRequest> findByTargetPhoneNumberAndTargetInstagramIdAndMatchedFalseAndStatus(
             String phone,

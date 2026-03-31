@@ -2,6 +2,9 @@
 package com.example.demo.login.member.service.auth;
 
 import com.example.demo.common.util.AESUtil;
+import com.example.demo.attachment.domain.repository.AttachmentResultRepository;
+import com.example.demo.community.comment.domain.repository.CommentRepository;
+import com.example.demo.community.post.domain.repository.PostRepository;
 import com.example.demo.login.global.exception.exceptions.CustomErrorCode;
 import com.example.demo.login.global.exception.exceptions.CustomException;
 import com.example.demo.login.member.controller.auth.dto.*;
@@ -32,6 +35,9 @@ public class AuthService {
     private final PhoneAuthService phoneAuthService;
     private final MatchRequestRepository matchRequestRepository;
     private final TiktokMatchRequestRepository tiktokMatchRequestRepository;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
+    private final AttachmentResultRepository attachmentResultRepository;
 
     public Member normalSignUp(NormalSignUpRequest request) {
         if (!phoneAuthService.isVerified(request.phoneNumber())) {
@@ -68,11 +74,12 @@ public class AuthService {
 
         if (member.isDeleted()) return;
 
-        matchRequestRepository.findByRequester(member)
-                .ifPresent(matchRequestRepository::delete);
-
-        tiktokMatchRequestRepository.findByRequester(member)
-                .ifPresent(tiktokMatchRequestRepository::delete);
+        matchRequestRepository.deleteAllByRequesterOrMatchedMember(member, member);
+        tiktokMatchRequestRepository.deleteAllByRequesterOrMatchedMember(member, member);
+        attachmentResultRepository.deleteAllByMember(member);
+        commentRepository.deleteAllByWriter(member);
+        commentRepository.deleteAllByPostWriter(member);
+        postRepository.deleteAllByWriter(member);
 
         member.withdraw();
     }

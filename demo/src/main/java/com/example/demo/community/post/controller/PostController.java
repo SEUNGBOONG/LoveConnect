@@ -39,7 +39,10 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<ApiResponse<PostResponse>> get(@Member Long memberId, @PathVariable Long postId) {
+    public ResponseEntity<ApiResponse<PostResponse>> get(
+            @Member(required = false) Long memberId,
+            @PathVariable Long postId
+    ) {
         return ResponseEntity.ok(ApiResponse.success(postService.getById(memberId, postId)));
     }
 
@@ -48,7 +51,7 @@ public class PostController {
      */
     @GetMapping("/paged")
     public ResponseEntity<ApiResponse<PostPageResponse>> getAllPaged(
-            @Member Long memberId,
+            @Member(required = false) Long memberId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(PostPageResponse.from(postService.getAllPaged(memberId, pageable))));
@@ -58,7 +61,7 @@ public class PostController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PostPageResponse>> search(
             @ModelAttribute PostSearchCondition condition,
-            @Member Long memberId,
+            @Member(required = false) Long memberId,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(ApiResponse.success(PostPageResponse.from(postService.search(condition, memberId, pageable))));

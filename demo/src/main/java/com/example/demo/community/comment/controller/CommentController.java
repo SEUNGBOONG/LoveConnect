@@ -57,7 +57,7 @@ public class CommentController {
     public ResponseEntity<ApiResponse<CommentPageResponse>> getByPostPaged(
             @PathVariable Long postId,
             Pageable pageable,
-            @Member Long memberId
+            @Member(required = false) Long memberId
     ) {
         return ResponseEntity.ok(
                 ApiResponse.success(

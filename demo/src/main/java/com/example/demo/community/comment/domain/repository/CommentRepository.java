@@ -1,6 +1,7 @@
 package com.example.demo.community.comment.domain.repository;
 
 import com.example.demo.community.comment.domain.entity.Comment;
+import com.example.demo.login.member.domain.member.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,8 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, Comment
     // 부모 댓글 페이징 조회
     Page<Comment> findAllByPostIdAndParentIsNull(Long postId, Pageable pageable);
     void deleteAllByPostId(Long postId);
+    void deleteAllByWriter(Member writer);
+    void deleteAllByPostWriter(Member writer);
     // CommentRepository.java
     long countByPostId(Long postId);
 

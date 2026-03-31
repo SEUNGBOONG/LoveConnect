@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface AttachmentResultRepository extends JpaRepository<AttachmentResult, Long> {
     List<AttachmentResult> findAllByMember(Member member);
-    void deleteByMember(Member member); // ← 추가
+    void deleteByMember(Member member);
+    void deleteAllByMember(Member member);
 }

@@ -8,6 +8,7 @@ import java.util.Optional;
 public interface TiktokMatchRequestRepository extends JpaRepository<TiktokMatchRequest, Long> {
 
     Optional<TiktokMatchRequest> findByRequester(Member requester);
+    void deleteAllByRequesterOrMatchedMember(Member requester, Member matchedMember);
 
     Optional<TiktokMatchRequest> findByTargetPhoneNumberAndTargetTiktokIdAndMatchedFalseAndStatus(
             String phone,
