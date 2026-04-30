@@ -62,7 +62,10 @@ public enum CustomErrorCode {
             HttpStatus.BAD_REQUEST,
             "MATCH_010",
             "유효하지 않은 틱톡 아이디입니다."
-    );
+    ),
+
+    LETTER_NOT_FOUND(HttpStatus.NOT_FOUND, "LETTER_001", "편지를 찾을 수 없습니다."),
+    LETTER_UNAUTHORIZED(HttpStatus.FORBIDDEN, "LETTER_002", "편지 작성자가 아닙니다.");
     private final HttpStatus httpStatus;
     private final String customCode;
     private final String message;
