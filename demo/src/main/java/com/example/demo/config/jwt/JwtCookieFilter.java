@@ -53,6 +53,10 @@ public class JwtCookieFilter extends OncePerRequestFilter {
             }
         }
 
+        if (token == null || token.isBlank()) {
+            token = request.getHeader("X-Access-Token");
+        }
+
         if (token != null && !token.isBlank()) {
             try {
                 DecodedJWT jwt = jwtTokenProvider.verifyToken(token);

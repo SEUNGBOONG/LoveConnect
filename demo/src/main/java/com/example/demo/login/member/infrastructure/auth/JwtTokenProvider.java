@@ -22,6 +22,10 @@ public class JwtTokenProvider implements Token {
         this.expirationPeriod = expirationPeriod;
     }
 
+    public long getExpirationPeriodSeconds() {
+        return expirationPeriod;
+    }
+
     @Override
     public String createToken(Long memberId) {
         return JWT.create()

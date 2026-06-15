@@ -65,7 +65,13 @@ public enum CustomErrorCode {
     ),
 
     LETTER_NOT_FOUND(HttpStatus.NOT_FOUND, "LETTER_001", "편지를 찾을 수 없습니다."),
-    LETTER_UNAUTHORIZED(HttpStatus.FORBIDDEN, "LETTER_002", "편지 작성자가 아닙니다.");
+    LETTER_UNAUTHORIZED(HttpStatus.FORBIDDEN, "LETTER_002", "편지 작성자가 아닙니다."),
+
+    // 토스 로그인
+    TOSS_TOKEN_FAILED(HttpStatus.BAD_REQUEST, "TOSS_001", "토스 인증 코드가 만료되었거나 이미 사용되었습니다. 다시 로그인해 주세요."),
+    TOSS_USER_INFO_FAILED(HttpStatus.BAD_GATEWAY, "TOSS_002", "토스 사용자 정보를 가져오지 못했습니다. 잠시 후 다시 시도해 주세요."),
+    TOSS_MEMBER_CONFLICT(HttpStatus.CONFLICT, "TOSS_003", "토스 계정 연동 중 충돌이 발생했습니다. 고객센터에 문의해 주세요."),
+    TOSS_LOGIN_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "TOSS_004", "토스 로그인 처리 중 오류가 발생했습니다.");
     private final HttpStatus httpStatus;
     private final String customCode;
     private final String message;
