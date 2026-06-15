@@ -1,9 +1,10 @@
 package com.example.demo.login.toss.controller;
 
+import com.example.demo.config.jwt.AuthCookieSupport;
 import com.example.demo.login.global.annotation.Member;
+import com.example.demo.login.member.infrastructure.auth.JwtTokenProvider;
 import com.example.demo.login.toss.application.TossAuthService;
 import com.example.demo.login.toss.dto.request.TossAdditionalInfoRequest;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,8 @@ import java.util.Map;
 public class TossAuthController {
 
     private final TossAuthService tossAuthService;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final AuthCookieSupport authCookieSupport;
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(
@@ -41,23 +44,13 @@ public class TossAuthController {
         Map<String, Object> result = tossAuthService.executeTossLogin(authorizationCode, referrer);
         String token = (String) result.get("token");
 
-        // ✅ 쿠키 세팅
-        Cookie jwtCookie = new Cookie("token", token);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(60 * 60); // 1시간
+        authCookieSupport.writeTokenCookie(
+                request,
+                response,
+                token,
+                (int) jwtTokenProvider.getExpirationPeriodSeconds()
+        );
 
-        boolean isLocal =
-                request.getServerName().equals("localhost") || request.getServerName().equals("127.0.0.1");
-
-        if (!isLocal) {
-            jwtCookie.setSecure(true);
-            jwtCookie.setDomain(".lovereconnect.co.kr");
-        }
-
-        response.addCookie(jwtCookie);
-
-        // ✅ 이걸로 token, memberId 등 다 내려보냄
         return ResponseEntity.ok(result);
     }
 
@@ -70,19 +63,7 @@ public class TossAuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) {
-        Cookie logoutCookie = new Cookie("token", null);
-        logoutCookie.setPath("/");
-        logoutCookie.setMaxAge(0); // 즉시 만료
-
-        boolean isLocal =
-                request.getServerName().equals("localhost") || request.getServerName().equals("127.0.0.1");
-
-        if (!isLocal) {
-            logoutCookie.setSecure(true);
-            logoutCookie.setDomain(".lovereconnect.co.kr");
-        }
-
-        response.addCookie(logoutCookie);
+        authCookieSupport.clearTokenCookie(request, response);
         return ResponseEntity.ok().build();
     }
 

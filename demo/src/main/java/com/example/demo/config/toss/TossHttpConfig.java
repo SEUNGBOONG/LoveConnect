@@ -49,7 +49,8 @@ public class TossHttpConfig {
                 .build();
 
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        factory.setConnectTimeout((int) Duration.ofSeconds(5).toMillis());
+        factory.setConnectTimeout((int) Duration.ofSeconds(10).toMillis());
+        factory.setReadTimeout((int) Duration.ofSeconds(15).toMillis());
 
         return new RestTemplate(factory);
     }

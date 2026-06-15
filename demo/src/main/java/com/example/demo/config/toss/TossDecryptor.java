@@ -8,7 +8,13 @@ import java.util.Base64;
 
 public class TossDecryptor {
 
-    // 반드시 'static'이 붙어 있어야 합니다! 그래야 TossAuthService에서 바로 씁니다.
+    public static String decryptIfPresent(String encryptedText, String base64EncodedAesKey, String aad) throws Exception {
+        if (encryptedText == null || encryptedText.isBlank()) {
+            return null;
+        }
+        return decrypt(encryptedText, base64EncodedAesKey, aad);
+    }
+
     public static String decrypt(String encryptedText, String base64EncodedAesKey, String aad) throws Exception {
 
         final int IV_LENGTH = 12;
